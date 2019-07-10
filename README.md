@@ -84,17 +84,17 @@ await fastify.listen(8080);
 
 |               | Method        | URL   |       |
 | ------------- | ------------- | ----- | ----- | 
-| List all authors | GET | http://localhost:8080/api/authors | Pagination, sorting and filtering [are ready](#list-method-options) |
-| List all books | GET | http://localhost:8080/api/books |   |
-| Create new author | POST | http://localhost:8080/api/authors | Send properties using FormData ( todo: link to sample code ) |
-| Create new book | POST | http://localhost:8080/api/books |  |
-| Get single author | GET | http://localhost:8080/api/authors/AUTHORID | |
-| Get author books | GET | http://localhost:8080/api/authors/AUTHORID/books | Plugin build relations based on models definition |
-| Get book author | GET | http://localhost:8080/api/books/BOOKID/author | Same in reverse way |
-| Update author | PUT | http://localhost:8080/api/authors/AUTHORID | Send properties using FormData |
-| Update book | PUT | http://localhost:8080/api/books/BOOKID |   |
-| Delete book | DELETE | http://localhost:8080/api/books/BOOKID | Be careful |
-| Delete author | DELETE | http://localhost:8080/api/authors/AUTHORID |   |
+| List all authors | GET | /api/authors | Pagination, sorting and filtering [are ready](#list-method-options) |
+| List all books | GET | /api/books |   |
+| Create new author | POST | /api/authors | Send properties using FormData ( todo: link to sample code ) |
+| Create new book | POST | /api/books |  |
+| Get single author | GET | /api/authors/AUTHORID | |
+| Get author books | GET | /api/authors/AUTHORID/books | Plugin build relations based on models definition |
+| Get book author | GET | /api/books/BOOKID/author | Same in reverse way |
+| Update author | PUT | /api/authors/AUTHORID | Send properties using FormData |
+| Update book | PUT | /api/books/BOOKID |   |
+| Delete book | DELETE | /api/books/BOOKID | Be careful |
+| Delete author | DELETE | /api/authors/AUTHORID |   |
 
 ## List method response sample
 
