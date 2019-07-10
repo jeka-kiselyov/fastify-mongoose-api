@@ -1,5 +1,7 @@
 # Fastify plugin to expose API for Mongoose MongoDB models
 
+If you are using [Fastify](https://github.com/fastify/fastify) as your server and [Mongoose](https://github.com/Automattic/mongoose) as your ODM, here is the easiest solution to run API server for your models.
+
 ### As simple as:
 ```javascript
     const fastify = Fastify();

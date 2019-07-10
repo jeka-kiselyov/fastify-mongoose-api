@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 const fastifyFormbody = require('fastify-formbody');
 
 const FASTIFY_PORT = 3137;
-const MONGODB_URL = 'mongodb://127.0.0.1/wvp';
+const MONGODB_URL = 'mongodb://127.0.0.1/fastifymongooseapitest';
 
 
 let mongooseConnection = null;
