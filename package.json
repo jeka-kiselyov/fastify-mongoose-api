@@ -1,0 +1,35 @@
+{
+  "name": "fastify-mongoose-api",
+  "version": "1.0.0",
+  "description": "API for Mongoose models in one line of code",
+  "main": "fastify-mongoose-api.js",
+  "scripts": {
+    "test": "tap -J ./test/*.test.js"
+  },
+  "keywords": [
+    "fastify",
+    "mongoose",
+    "mongodb",
+    "rest",
+    "api"
+  ],
+  "author": "Jeka Kiselyov",
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^2.3.0",
+    "fastify-formbody": "^3.1.0",
+    "fastify-plugin": "^1.5.0",
+    "mongoose": "^5.5.4",
+    "pluralize": "^7.0.0"
+  },
+  "devDependencies": {
+    "grunt": "^1.0.4",
+    "grunt-contrib-watch": "^1.1.0",
+    "grunt-env": "^0.4.4",
+    "grunt-node-tap": "^1.0.0",
+    "grunt-tape": "^0.1.0",
+    "hippie": "^0.5.2",
+    "supertest": "^4.0.2",
+    "tap": "^13.0.4"
+  }
+}
