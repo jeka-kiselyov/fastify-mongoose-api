@@ -17,6 +17,13 @@ If you are using [Fastify](https://github.com/fastify/fastify) as your server an
     await fastify.listen(8080); /// running the server
     //// yep, right here we already have API server running on port 8080 with methods for all MongoDB models of your mongoose instance.
 ```
+- [Installation](#installation)
+- [Sample application](#sample-application)
+- [Auto generated method routes for sample application](#sample-application-generated-api-routes)
+- [LIST method options (pagination, sorting, filtering)](#list-method-options)
+- Extending mongoose models with your custom API methods (ready to use, but todo write docs)
+- [Unit tests](#tests)
+
 ## Installation
 
 ```bash
