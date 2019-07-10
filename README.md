@@ -70,19 +70,49 @@ await fastify.listen(8080);
 ```
 ### Sample application generated API routes
 
-|         | Method           | URL  |    |
-| ------------- |:-------------:| -----:| -----:| 
-| List all authors | GET | http://localhost:8080/api/authors | Pagination, sorting and filtering are ready ( todo: link to doc section ) |
+|               | Method        | URL   |       |
+| ------------- | ------------- | ----- | ----- | 
+| List all authors | GET | http://localhost:8080/api/authors | Pagination, sorting and filtering [are ready](#list-method-options) |
 | List all books | GET | http://localhost:8080/api/books |   |
 | Create new author | POST | http://localhost:8080/api/authors | Send properties using FormData ( todo: link to sample code ) |
 | Create new book | POST | http://localhost:8080/api/books |  |
-| Get single author | GET | http://localhost:8080/api/authors/5d1dd920bfff30ff2ffb8593 | |
-| Get author books | GET | http://localhost:8080/api/authors/5d1dd920bfff30ff2ffb8593/books | Plugin build relations based on models definition |
-| Get book author | GET | http://localhost:8080/api/books/6a1aa920bfff30ff2ffb81af/author | Same in reverse way |
-| Update author | PUT | http://localhost:8080/api/authors/5d1dd920bfff30ff2ffb8593 | Send properties using FormData |
-| Update book | PUT | http://localhost:8080/api/books/6a1aa920bfff30ff2ffb81af |   |
-| Delete book | DELETE | http://localhost:8080/api/books/6a1aa920bfff30ff2ffb81af | Be careful |
-| Delete author | DELETE | http://localhost:8080/api/authors/5d1dd920bfff30ff2ffb8593 |   |
+| Get single author | GET | http://localhost:8080/api/authors/AUTHORID | |
+| Get author books | GET | http://localhost:8080/api/authors/AUTHORID/books | Plugin build relations based on models definition |
+| Get book author | GET | http://localhost:8080/api/books/BOOKID/author | Same in reverse way |
+| Update author | PUT | http://localhost:8080/api/authors/AUTHORID | Send properties using FormData |
+| Update book | PUT | http://localhost:8080/api/books/BOOKID |   |
+| Delete book | DELETE | http://localhost:8080/api/books/BOOKID | Be careful |
+| Delete author | DELETE | http://localhost:8080/api/authors/AUTHORID |   |
+
+
+## List method options
+
+Pass all options as URL GET parameters, e.g. /api/books?option=some&option2=better
+
+### Pagination
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Offset  | offset      | 0             |
+| Limit   | limit       | 0             |
+
+### Sorting
+
+Pass sort option string as described in [Mongoose docs](https://mongoosejs.com/docs/api.html#query_Query-sort), e.g. 'name' for sorting by name field or '-name' for descending sort by it.
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Sort    | sort        | null          |
+
+### Filtering
+
+Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnval will return all books with isbn equals to 'someisbnval'. %3D here is urlencoded '=' symbol, so actual option value is 'isbn=someisbnval'
+
+### Pagination
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Filter  | filter      | null          |
 
 ## License
 
