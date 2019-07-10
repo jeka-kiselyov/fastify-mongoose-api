@@ -94,7 +94,7 @@ Pass all options as URL GET parameters, e.g. /api/books?option=some&option2=bett
 |         | Option Name | Default Value |
 | ------- | ----------- | ------------- |
 | Offset  | offset      | 0             |
-| Limit   | limit       | 0             |
+| Limit   | limit       | 100           |
 
 ### Sorting
 
@@ -107,8 +107,6 @@ Pass sort option string as described in [Mongoose docs](https://mongoosejs.com/d
 ### Filtering
 
 Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnval will return all books with isbn equals to 'someisbnval'. %3D here is urlencoded '=' symbol, so actual option value is 'isbn=someisbnval'
-
-### Pagination
 
 |         | Option Name | Default Value |
 | ------- | ----------- | ------------- |
