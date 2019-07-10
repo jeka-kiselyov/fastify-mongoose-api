@@ -20,7 +20,8 @@ If you are using [Fastify](https://github.com/fastify/fastify) as your server an
 - [Installation](#installation)
 - [Sample application](#sample-application)
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
-- [LIST method options (pagination, sorting, filtering)](#list-method-options)
+- [LIST methods response](#list-method-response-sample)
+- [LIST methods options (pagination, sorting, filtering)](#list-method-options)
 - Extending mongoose models with your custom API methods (ready to use, but todo write docs)
 - [Unit tests](#tests)
 
