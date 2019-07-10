@@ -98,6 +98,8 @@ await fastify.listen(8080);
 
 ## List method response sample
 
+Sample API response for `List all authors` method:
+
 ```javascript
 { total: 2,                                 
   items:
