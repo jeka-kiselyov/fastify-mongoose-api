@@ -95,6 +95,24 @@ await fastify.listen(8080);
 | Delete book | DELETE | http://localhost:8080/api/books/BOOKID | Be careful |
 | Delete author | DELETE | http://localhost:8080/api/authors/AUTHORID |   |
 
+## List method response sample
+
+```json
+{ total: 2,                                 
+  items:
+   [ { _id: '5d2620aff4df8b3c4f4f03d6',
+       created: '2019-07-10T17:30:23.486Z',
+       firstName: 'Jay',            
+       lastName: 'Kay',             
+       biography: 'Lived. Died.',
+       __v: 0 },                               
+     { _id: '5d2620aff4df8b3c4f4f03d8',
+       created: '2019-07-10T17:30:23.566Z',
+       firstName: 'Hutin',
+       lastName: 'Puylo',               
+       biography: 'The Little One',
+       __v: 0 } ] } 
+```
 
 ## List method options
 

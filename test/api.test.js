@@ -180,6 +180,8 @@ test('GET collection sorting', async t => {
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 	
+	console.log(response.body);
+
 	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
 	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
 	t.match(response.body.items[0], {firstName: 'Jay'}, "The oldest first");
