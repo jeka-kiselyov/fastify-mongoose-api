@@ -25,6 +25,8 @@ npm i fastify-mongoose-api -s
 
 ## Sample Application 
 
+Check out plugin's [unit test file](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/api.test.js) to see real working code.
+
 ### Sample models
 
 We are defining two classic models. Books and author with one to many relation between them.
@@ -113,6 +115,10 @@ Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnv
 |         | Option Name | Default Value |
 | ------- | ----------- | ------------- |
 | Filter  | filter      | null          |
+
+## Tests
+
+Clone fastify-mongoose-api, run `npm install` in its directory and run `grunt` to run [unit tests](https://github.com/jeka-kiselyov/fastify-mongoose-api/tree/master/test), or `grunt watchtests` to run unit tests on each file change (development mode).
 
 ## License
 
