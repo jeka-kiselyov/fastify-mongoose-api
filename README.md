@@ -97,7 +97,7 @@ await fastify.listen(8080);
 
 ## List method response sample
 
-```json
+```javascript
 { total: 2,                                 
   items:
    [ { _id: '5d2620aff4df8b3c4f4f03d6',
