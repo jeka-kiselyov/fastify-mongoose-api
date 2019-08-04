@@ -23,6 +23,7 @@ await fastify.listen(8080); /// running the server
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, sorting, filtering)](#list-method-options)
 - Extending mongoose models with your custom API methods (ready to use, but todo write docs)
+- [How to enable CORS for cross-domain requests?](#cors)
 - [Unit tests](#tests)
 
 ## Installation
@@ -143,6 +144,29 @@ Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnv
 |         | Option Name | Default Value |
 | ------- | ----------- | ------------- |
 | Filter  | filter      | null          |
+
+
+### CORS
+
+How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/fastify/fastify-cors) works just fine:
+
+```javascript
+  const fastify = Fastify();
+  fastify.register(fastifyFormbody);
+  fastify.register(require('fastify-cors'), { 
+      // put your options here
+  });
+
+  fastify.register(fastifyMongooseAPI, {
+          models: this.db.connection.models,
+          prefix: '/api/',
+          setDefaults: true,
+          methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
+      });
+
+  await fastify.ready();
+  await fastify.listen(args.port);
+```
 
 ## Tests
 
