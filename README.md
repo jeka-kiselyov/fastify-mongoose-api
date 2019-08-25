@@ -145,6 +145,13 @@ Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnv
 | ------- | ----------- | ------------- |
 | Filter  | filter      | null          |
 
+### Search
+
+Performs search by [full text mongodb index](https://docs.mongodb.com/manual/core/index-text/). First you have to [specify text index](https://stackoverflow.com/a/28775709/1119169) in your model schema.
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Search  | search      | null          |
 
 ### CORS
 

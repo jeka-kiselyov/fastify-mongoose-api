@@ -89,8 +89,13 @@ class APIRouter {
 		let limit = request.query.limit ? parseInt(request.query.limit, 10) : 100;
 		let sort = request.query.sort ? request.query.sort : null;
 		let filter = request.query.filter ? request.query.filter : null;
+		let search = request.query.search ? request.query.search : null;
 
 		let ret = {};
+
+		if (search) {
+			query = query.and({$text: {$search: search}});			
+		}
 
 		if (filter) {
 			let splet = (''+filter).split('=');
