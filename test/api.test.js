@@ -37,6 +37,7 @@ test('schema initialization', async t => {
 			default: Date.now
 		}
 	});
+	authorSchema.index({firstName: 'text', lastName: 'text', biography: 'text'}); /// you can use wildcard here too: https://stackoverflow.com/a/28775709/1119169
 
 	const Author = mongooseConnection.model('Author', authorSchema);
 
@@ -52,6 +53,7 @@ test('schema initialization', async t => {
 			default: Date.now
 		}
 	});
+
 
 	const Book = mongooseConnection.model('Book', bookSchema);
 
@@ -171,6 +173,21 @@ test('GET collection filtering', async t => {
 	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
 });
 
+
+test('GET collection search', async t => {
+	let response = null;
+
+	response = await supertest(fastify.server)
+		.get('/api/authors')
+		.query({ search: 'One Little' }) //// URL GET parameters
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+	
+	t.equal(response.body.total, 1, 'API returns 1 searched author');
+	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
+	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+});
+
 test('GET collection sorting', async t => {
 	let response = null;
 
@@ -180,7 +197,7 @@ test('GET collection sorting', async t => {
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 	
-	console.log(response.body);
+	// console.log(response.body);
 
 	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
 	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
