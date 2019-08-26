@@ -21,7 +21,8 @@ await fastify.listen(8080); /// running the server
 - [Sample application](#sample-application)
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
 - [LIST methods response](#list-method-response-sample)
-- [LIST methods options (pagination, sorting, filtering)](#list-method-options)
+- [LIST methods options (pagination, sorting, filtering, regext match, populate)](#list-method-options)
+- [Populate on POST, PUT and single item GET methods)](#populate-on)
 - Extending mongoose models with your custom API methods (ready to use, but todo write docs)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [Unit tests](#tests)
@@ -85,12 +86,12 @@ await fastify.listen(8080);
 
 |               | Method        | URL   |       |
 | ------------- | ------------- | ----- | ----- | 
-| List all authors | GET | /api/authors | Pagination, sorting and filtering [are ready](#list-method-options) |
-| List all books | GET | /api/books |   |
+| List all authors | GET | /api/authors | Pagination, sorting, search and filtering [are ready](#list-method-options) |
+| List all books | GET | /api/books | Want to get populated refs in response? [You can](#populate) |
 | Create new author | POST | /api/authors | Send properties using FormData ( todo: link to sample code ) |
 | Create new book | POST | /api/books |  |
 | Get single author | GET | /api/authors/AUTHORID | |
-| Get author books | GET | /api/authors/AUTHORID/books | Plugin build relations based on models definition |
+| Get author books | GET | /api/authors/AUTHORID/books | Plugin builds relations based on models definition |
 | Get book author | GET | /api/books/BOOKID/author | Same in reverse way |
 | Update author | PUT | /api/authors/AUTHORID | Send properties using FormData |
 | Update book | PUT | /api/books/BOOKID |   |
@@ -120,7 +121,7 @@ Sample API response for `List all authors` method:
 
 ## List method options
 
-Pass all options as URL GET parameters, e.g. /api/books?option=some&option2=better
+Pass all options as URL GET parameters, e.g. /api/books?option=some&option2=better Works very same for other LIST routes, `/api/authors/AUTHORID/books` etc.
 
 ### Pagination
 
@@ -145,15 +146,59 @@ Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnv
 | ------- | ----------- | ------------- |
 | Filter  | filter      | null          |
 
+
+### Regex match
+
+Use it for pattern matching. Useful for things like autocomplete etc. [Check mongodb docs](https://docs.mongodb.com/manual/reference/operator/query/regex/#pcre-vs-javascript) how to pass regex options in pattern string, e.g. `(?i)pattern` to turn case-insensitivity on. Pass param in the same way as for filtering, `/api/authors?match=lastName%3D(?i)vonnegut`
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Regex   | match       | null          |
+
 ### Search
 
-Performs search by [full text mongodb index](https://docs.mongodb.com/manual/core/index-text/). First you have to [specify text index](https://stackoverflow.com/a/28775709/1119169) in your model schema.
+Performs search by [full text mongodb indexes](https://docs.mongodb.com/manual/core/index-text/). First you have to [specify one or few text indexes](https://stackoverflow.com/a/28775709/1119169) in your model schema. You don't have to specify field name for this parameter, mongo will perform full text search on all available indexes.
 
 |         | Option Name | Default Value |
 | ------- | ----------- | ------------- |
 | Search  | search      | null          |
 
-### CORS
+### Populate
+
+If you want API response to include nested objects, just pass populate string in parameter, it will run `populate(param)` before sending response to client.
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Populate| populate    | null          |
+
+
+## Populate on POST, PUT and single item GET methods
+
+Works very same, just send your form(object) data in formBody and populate parameter in query string:
+
+```javascript
+  $.post('/api/books?populate=author', {
+      title: 'The best book',
+      isbn: '1482663775',
+      author: '5d62e5e4dab2ce6a1b958461'
+    });
+```
+
+and get a response of:
+
+```json
+{
+  "_id":"5d62f39c20672b3cf2822ded",
+  "title":"The best book",
+  "isbn":"1482663775",
+  "author":{
+    "_id":"5d62e5e4dab2ce6a1b958461",
+    "firstName":"Jay",
+    "lastName":"Holmes"}
+  }
+```
+
+## CORS
 
 How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/fastify/fastify-cors) works just fine:
 

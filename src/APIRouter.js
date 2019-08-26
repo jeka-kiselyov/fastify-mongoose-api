@@ -90,6 +90,9 @@ class APIRouter {
 		let sort = request.query.sort ? request.query.sort : null;
 		let filter = request.query.filter ? request.query.filter : null;
 		let search = request.query.search ? request.query.search : null;
+		let match = request.query.match ? request.query.match : null;
+
+		let populate = request.query.populate ? request.query.populate : null;
 
 		let ret = {};
 
@@ -106,10 +109,23 @@ class APIRouter {
 			query.where(splet[0]).equals(splet[1]);
 		}
 
+		if (match) {
+			let splet = (''+match).split('=');
+			if (splet.length == 2) {
+				const matchOptions = {};
+				matchOptions[splet[0]] = {$regex: splet[1]};
+				query = query.and(matchOptions);	
+			}
+		}
+
 		ret.total = await query.countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
 
 		query.limit(limit);
 		query.skip(offset);
+
+		if (populate) {
+			query.populate(populate);			
+		}
 
 		if (sort) {
 			query.sort(sort);
@@ -129,12 +145,20 @@ class APIRouter {
 	}
 
 	async routePost(request, reply) {
+		let populate = request.query.populate ? request.query.populate : null;
 		let doc = await this._model.apiPost(request.body);
+
+		if (populate) {
+			await doc.populate(populate).execPopulate();
+		}
+
 		reply.send(await this.docToAPIResponse(doc));
 	}
 
 	async routeGet(request, reply) {
 		let id = request.params.id || null;
+		let populate = request.query.populate ? request.query.populate : null;
+
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
@@ -142,7 +166,11 @@ class APIRouter {
 
 		if (!doc) {
 			reply.callNotFound();
-		} else {
+		} else {		
+			if (populate) {
+				await doc.populate(populate).execPopulate();
+			}
+
 			let ret = await this.docToAPIResponse(doc);
 			reply.send(ret);			
 		}
@@ -150,6 +178,8 @@ class APIRouter {
 
 	async routePut(request, reply) {
 		let id = request.params.id || null;
+		let populate = request.query.populate ? request.query.populate : null;
+
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
@@ -159,6 +189,11 @@ class APIRouter {
 			reply.callNotFound();
 		} else {
 			await doc.apiPut(request.body);
+
+			if (populate) {
+				await doc.populate(populate).execPopulate();
+			}
+
 			let ret = await this.docToAPIResponse(doc);
 			reply.send(ret);		
 		}

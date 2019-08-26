@@ -188,6 +188,34 @@ test('GET collection search', async t => {
 	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
 });
 
+test('GET collection regex match', async t => {
+	let response = null;
+
+	response = await supertest(fastify.server)
+		.get('/api/authors')
+		.query({ match: 'lastName=Puy' }) //// URL GET parameters
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+	
+	t.equal(response.body.total, 1, 'API returns 1 searched author');
+	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
+	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+});
+
+test('GET collection case-insensitive regex match', async t => {
+	let response = null;
+
+	response = await supertest(fastify.server)
+		.get('/api/authors')
+		.query({ match: 'lastName=(?i)puy' }) //// URL GET parameters
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+	
+	t.equal(response.body.total, 1, 'API returns 1 searched author');
+	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
+	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+});
+
 test('GET collection sorting', async t => {
 	let response = null;
 
@@ -289,6 +317,21 @@ test('GET single item Refs', async t => {
 	t.match(response.body.items[0], {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Refed book");
 });
 
+test('GET single item with populated field', async t => {
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
+	await bookFromDb.populate('author').execPopulate();
+
+	let response = null;
+	response = await supertest(fastify.server)
+		.get('/api/books/'+bookFromDb.id+'?populate=author')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+	
+	t.match(response.body, {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Book is ok");
+	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
+	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
+});
+
 test('POST item with ref test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
 	await bookFromDb.populate('author').execPopulate();
@@ -362,6 +405,38 @@ test('DELETE item test', async t => {
 	t.equal(response.body.total, 1, 'API returns 1 refed books after delete');
 	t.equal(response.body.items.length, 1, 'API returns 1 refed books after delete');
 });
+
+test('POST item and return populated response test', async t => {
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'Another One'});
+	await bookFromDb.populate('author').execPopulate();
+
+	let response = null;
+	response = await supertest(fastify.server)
+		.post('/api/books?populate=author')
+		.send({title: 'The populated book', isbn: 'isbn', author: ''+bookFromDb.author.id})
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+	
+	t.match(response.body, {title: 'The populated book', isbn: 'isbn'}, "POST api ok");
+	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
+	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
+});
+
+test('PUT item and return populated response test', async t => {
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The populated book'});
+	await bookFromDb.populate('author').execPopulate();
+
+	let response = null;
+	response = await supertest(fastify.server)
+		.put('/api/books/'+bookFromDb.id+"?populate=author")
+		.send({title: 'The populated book updated', isbn: 'isbn updated'})
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.match(response.body, {title: 'The populated book updated', isbn: 'isbn updated'}, "PUT api ok");
+	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
+});
+
 
 test('teardown', async t=>{
 	await fastify.close();
