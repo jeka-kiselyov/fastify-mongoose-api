@@ -25,12 +25,62 @@ await fastify.listen(8080); /// running the server
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - Extending mongoose models with your custom API methods (ready to use, but todo write docs)
 - [How to enable CORS for cross-domain requests?](#cors)
+- [How to implement authorization?](#cors)
 - [Unit tests](#tests)
 
 ## Installation
 
 ```bash
 npm i fastify-mongoose-api -s
+```
+
+## Initialization
+
+Register plugin on fastify instance:
+
+```javascript
+const fastify = Fastify();
+fastify.register(fastifyFormbody);
+fastify.register(fastifyMongooseAPI, options);
+```
+
+with following options:
+
+#### .models : array of mongoose models 
+
+Required. Array of mongoose models. Usually you can get them from mongoose connection object like:
+```javascript
+let connection = await mongoose.createConnection(this.config.database.database, options);
+/// ... register mongoose models
+connection.model('Author', schema);
+connection.model('Book', schema);
+/// ... connection models is ready for fastify-mongoose-api
+connection.models
+```
+
+#### .setDefaults : boolean (default: true)
+
+Initialize api with default REST methods
+
+#### .methods : array of strings
+
+Methods to initialize, `['list', 'get', 'post', 'patch', 'put', 'delete', 'options']` is available.
+
+#### .checkAuth : function
+
+Function to run before any API request to check authorization permissions in. Just throw an error in it if user is now allowed to perform an action.
+
+```javascript
+  
+fastify.register(fastifyMongooseAPI, {
+        models: this.db.connection.models,
+        checkAuth: async (req, reply)=>{
+          let ac = await this.db.AuthCode.findOne({authCode: req.cookies.authCode}).populate('user').exec(); /// fastify-cookie plugin for req.cookie
+          if (!ac || !ac.user) {
+            throw new Error('You are not authorized to be here');
+          }               
+        }
+    });
 ```
 
 ## Sample Application 

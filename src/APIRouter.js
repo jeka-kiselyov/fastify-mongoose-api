@@ -5,6 +5,7 @@ class APIRouter {
 		this._models = params.models || [];
 		this._fastify = params.fastify || null;
 		this._model = params.model || null;
+		this._checkAuth = params.checkAuth || null;
 
 		this._modelName = this._model.modelName;
 
@@ -28,27 +29,34 @@ class APIRouter {
 
 	setUpRoutes() {
 		let path = this._path;
-		this._fastify.get(path, {}, (request, reply)=>{return this.routeList(request, reply)});
-		this._fastify.post(path, {}, (request, reply)=>{return this.routePost(request, reply)});
-		this._fastify.get(path+'/:id', {}, (request, reply)=>{return this.routeGet(request, reply)});
-		this._fastify.put(path+'/:id', {}, (request, reply)=>{return this.routePut(request, reply)});
-		this._fastify.patch(path+'/:id', {}, (request, reply)=>{return this.routePut(request, reply)});
-		this._fastify.delete(path+'/:id', {}, (request, reply)=>{return this.routeDelete(request, reply)});
+		this._fastify.get(path, {}, this.routeHandler('routeList'));
+		this._fastify.post(path, {}, this.routeHandler('routePost'));
+		this._fastify.get(path+'/:id', {}, this.routeHandler('routeGet'));
+		this._fastify.put(path+'/:id', {}, this.routeHandler('routePut'));
+		this._fastify.patch(path+'/:id', {}, this.routeHandler('routePut'));
+		this._fastify.delete(path+'/:id', {}, this.routeHandler('routeDelete'));
 
 		/// check if there's apiSubRoutes method on the model
 		if (this._model['apiSubRoutes']) {
 			this._apiSubRoutesFunctions = this._model['apiSubRoutes']();
 
-			let makeSubHandler = (routeName) => {
-				return (request, reply) => {
-						return this.routeSub(routeName, request, reply);
-					};
-			};
-
 			for (let key of Object.keys(this._apiSubRoutesFunctions)) {
-				this._fastify.get(path+'/:id/'+key, {}, makeSubHandler(key));				
+				this._fastify.get(path+'/:id/'+key, {}, this.routeHandler('routeSub', key));				
 			}
 		}
+	}
+
+	routeHandler(funcName, subRouteName = null) {
+		return async (request, reply) => {
+				if (typeof(this._checkAuth) === 'function') {
+					await this._checkAuth(request, reply);
+				} 
+				if (subRouteName) {
+					return await this.routeSub(subRouteName, request, reply);
+				} else {
+					return await this[funcName](request, reply);					
+				}
+			}
 	}
 
 	async routeSub(routeName, request, reply) {

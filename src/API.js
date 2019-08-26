@@ -6,6 +6,7 @@ class API {
 		this._models = params.models || null;
 		this._fastify = params.fastify || null;
 
+		this._checkAuth = params.checkAuth || null;
 		this._defaultModelMethods = params.defaultModelMethods || DefaultModelMethods;
 
 		this._apiRouters = {};
@@ -31,6 +32,7 @@ class API {
 		}
 
 		let methods = params.methods ? params.methods : null;
+		let checkAuth = params.checkAuth ? params.checkAuth : null;
 
 		if (model.schema) {
 			if (setDefaults) {
@@ -45,6 +47,7 @@ class API {
 					models: this._models,
 					model: model,
 					methods: methods,
+					checkAuth: checkAuth,
 					fastify: this._fastify
 				});
 			}
