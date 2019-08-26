@@ -18,6 +18,7 @@ await fastify.listen(8080); /// running the server
 //// yep, right here we already have API server running on port 8080 with methods for all MongoDB models of your mongoose instance.
 ```
 - [Installation](#installation)
+- [Initialization and parameters](#initialization)
 - [Sample application](#sample-application)
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
 - [LIST methods response](#list-method-response-sample)
@@ -58,6 +59,10 @@ connection.model('Book', schema);
 connection.models
 ```
 
+#### .prefix : string (default: '/api/')
+
+Path prefix. Default is `/api/`.
+
 #### .setDefaults : boolean (default: true)
 
 Initialize api with default REST methods
@@ -69,10 +74,6 @@ Methods to initialize, `['list', 'get', 'post', 'patch', 'put', 'delete', 'optio
 #### .checkAuth : function
 
 Function to run before any API request to check authorization permissions in. Just throw an error in it if user is now allowed to perform an action.
-
-#### .prefix : string (default: '/api/')
-
-Path prefix. Default is `/api/`.
 
 ```javascript
   
