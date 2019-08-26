@@ -22,7 +22,7 @@ await fastify.listen(8080); /// running the server
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, sorting, filtering, regext match, populate)](#list-method-options)
-- [Populate on POST, PUT and single item GET methods)](#populate-on)
+- [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - Extending mongoose models with your custom API methods (ready to use, but todo write docs)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [Unit tests](#tests)
