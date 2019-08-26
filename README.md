@@ -25,7 +25,7 @@ await fastify.listen(8080); /// running the server
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - Extending mongoose models with your custom API methods (ready to use, but todo write docs)
 - [How to enable CORS for cross-domain requests?](#cors)
-- [How to implement authorization?](#cors)
+- [How to implement authorization?](#checkauth--function)
 - [Unit tests](#tests)
 
 ## Installation
