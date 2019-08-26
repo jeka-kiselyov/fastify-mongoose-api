@@ -70,6 +70,10 @@ Methods to initialize, `['list', 'get', 'post', 'patch', 'put', 'delete', 'optio
 
 Function to run before any API request to check authorization permissions in. Just throw an error in it if user is now allowed to perform an action.
 
+#### .prefix : string (default: '/api/')
+
+Path prefix. Default is `/api/`.
+
 ```javascript
   
 fastify.register(fastifyMongooseAPI, {

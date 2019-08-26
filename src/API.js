@@ -33,6 +33,7 @@ class API {
 
 		let methods = params.methods ? params.methods : null;
 		let checkAuth = params.checkAuth ? params.checkAuth : null;
+		let prefix = params.prefix ? params.prefix : null;
 
 		if (model.schema) {
 			if (setDefaults) {
@@ -48,6 +49,7 @@ class API {
 					model: model,
 					methods: methods,
 					checkAuth: checkAuth,
+					prefix: prefix,
 					fastify: this._fastify
 				});
 			}
