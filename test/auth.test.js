@@ -127,12 +127,12 @@ test('Test Auth (authed)', async t => {
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
+	console.log(response.body);
 	t.match(response.body, {total: 0}, "There is response");
+
 });
 
 test('teardown', async t=>{
 	await fastify.close();
 	await mongooseConnection.close();
-
-
 });

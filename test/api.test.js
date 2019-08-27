@@ -81,8 +81,8 @@ test('schema ok', async t => {
 
 	await book.save();
 
-	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'});
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
+	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'}).exec();
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'}).exec();
 
 	t.ok(authorFromDb);
 	t.ok(bookFromDb);
@@ -441,6 +441,4 @@ test('PUT item and return populated response test', async t => {
 test('teardown', async t=>{
 	await fastify.close();
 	await mongooseConnection.close();
-
-
 });
