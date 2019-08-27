@@ -19,7 +19,7 @@ await fastify.listen(8080); /// running the server
 ```
 - [Installation](#installation)
 - [Initialization and parameters](#initialization)
-- [Sample application](#sample-application)
+- Sample application ([Source code](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app), [Live demo](https://fastify-mongoose-api-app.herokuapp.com/))
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, sorting, filtering, regext match, populate)](#list-method-options)
@@ -90,7 +90,9 @@ fastify.register(fastifyMongooseAPI, {
 
 ## Sample Application 
 
-Check out plugin's [unit test file](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/api.test.js) to see real working code.
+Sample application ([Source code](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app), [Live demo](https://fastify-mongoose-api-app.herokuapp.com/)) with Vue.js UI, simple Auth integration, ready to run on Heroku.
+
+You can also check plugin's [unit test file](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/api.test.js).
 
 ### Sample models
 
