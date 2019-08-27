@@ -24,7 +24,6 @@ await fastify.listen(8080); /// running the server
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, sorting, filtering, regext match, populate)](#list-method-options)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
-- Extending mongoose models with your custom API methods (ready to use, but todo write docs)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [How to implement authorization?](#checkauth--function)
 - [Unit tests](#tests)
@@ -145,7 +144,7 @@ await fastify.listen(8080);
 | ------------- | ------------- | ----- | ----- | 
 | List all authors | GET | /api/authors | Pagination, sorting, search and filtering [are ready](#list-method-options) |
 | List all books | GET | /api/books | Want to get populated refs in response? [You can](#populate) |
-| Create new author | POST | /api/authors | Send properties using FormData ( todo: link to sample code ) |
+| Create new author | POST | /api/authors | Send properties using FormData [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
 | Create new book | POST | /api/books |  |
 | Get single author | GET | /api/authors/AUTHORID | |
 | Get author books | GET | /api/authors/AUTHORID/books | Plugin builds relations based on models definition |
