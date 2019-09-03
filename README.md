@@ -9,7 +9,7 @@ fastify.register(fastifyFormbody); /// need form body to accept API parameters
 fastify.register(fastifyMongooseAPI, {  /// here we are registering our plugin
     models: mongooseConnection.models,  /// Mongoose connection models
     prefix: '/api/',                    /// URL prefix. e.g. http://localhost/api/...
-    setDefaults: true,                  /// you can specify your own api methods on models, our trust our default ones (check em here)
+    setDefaults: true,                  /// you can specify your own api methods on models, our trust our default ones, check em [here](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)
     methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options'] /// HTTP methods
 });
 
