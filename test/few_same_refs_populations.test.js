@@ -48,6 +48,10 @@ test('schema initialization', async t => {
 	        type: mongoose.Schema.Types.ObjectId,
 	        ref: 'Author'
 	    },
+	    coauthor: { /// testing multiple populate
+	        type: mongoose.Schema.Types.ObjectId,
+	        ref: 'Author'
+	    },
 		created: {
 			type: Date,
 			default: Date.now
@@ -74,22 +78,36 @@ test('schema ok', async t => {
 
 	await author.save();
 
+	let coauthor = new mongooseConnection.models.Author;
+	coauthor.firstName = 'Co';
+	coauthor.lastName = 'Author';
+	coauthor.biography = 'Nothing special';
+
+	await coauthor.save();
+
 	let book = new mongooseConnection.models.Book;
 	book.title = 'The best book';
 	book.isbn = 'The best isbn';
 	book.author = author;
+	book.coauthor = coauthor;
 
 	await book.save();
 
 	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'}).exec();
+	let coauthorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Co'}).exec();
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'}).exec();
 
 	t.ok(authorFromDb);
+	t.ok(coauthorFromDb);
 	t.ok(bookFromDb);
 
 	await bookFromDb.populate('author').execPopulate();
 
 	t.equal(''+bookFromDb.author._id, ''+authorFromDb._id);
+
+	await bookFromDb.populate('coauthor').execPopulate();
+
+	t.equal(''+bookFromDb.coauthor._id, ''+coauthorFromDb._id);
 });
 
 
@@ -137,166 +155,12 @@ test('GET collection endpoints', async t => {
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
-	t.equal(response.body.total, 1, 'API returns 1 author');
-});
-
-test('POST item test', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.post('/api/authors')
-		.send({firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.match(response.body, {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "POST api ok");
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 2, 'There are two authors now');
-});
-
-
-test('GET collection filtering', async t => {
-	let response = null;
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ filter: 'lastName=Puylo' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 1, 'API returns 1 filtered author');
-	t.equal(response.body.items.length, 1, 'API returns 1 filtered author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
-});
-
-
-test('GET collection search', async t => {
-	let response = null;
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ search: 'One Little' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 1, 'API returns 1 searched author');
-	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
-});
-
-test('GET collection regex match', async t => {
-	let response = null;
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ match: 'lastName=Puy' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 1, 'API returns 1 searched author');
-	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
-});
-
-test('GET collection case-insensitive regex match', async t => {
-	let response = null;
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ match: 'lastName=(?i)puy' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 1, 'API returns 1 searched author');
-	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
-});
-
-test('GET collection sorting', async t => {
-	let response = null;
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ sort: 'created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	// console.log(response.body);
-
-	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
-	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
-	t.match(response.body.items[0], {firstName: 'Jay'}, "The oldest first");
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ sort: '-created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
-	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
-	t.match(response.body.items[0], {firstName: 'Hutin'}, "Most recent first");
-});
-
-test('GET collection pagination', async t => {
-	let response = null;
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ limit: 1, offset: 0, sort: '-created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 2, 'Total is everything');
-	t.equal(response.body.items.length, 1, 'Returned is paginated');
-	t.match(response.body.items[0], {firstName: 'Hutin'}, "Most recent is on the first page");
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ limit: 1, offset: 1, sort: '-created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.equal(response.body.total, 2, 'Total is everything');
-	t.equal(response.body.items.length, 1, 'Returned is paginated');
-	t.match(response.body.items[0], {firstName: 'Jay'}, "Older is on the second page");
-});
-
-test('GET single item', async t => {
-	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'});
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books/'+bookFromDb.id)
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.match(response.body, {title: 'The best book', isbn: 'The best isbn'}, "Single item data ok");
-	t.match(response.body, {_id: bookFromDb.id}, "Single item id ok");
-
-	response = await supertest(fastify.server)
-		.get('/api/authors/'+authorFromDb.id)
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.match(response.body, {firstName: 'Jay'}, "Single item data ok");
-	t.match(response.body, {_id: authorFromDb.id}, "Single item id ok");
-	// response = await supertest(fastify.server)
-	// 	.get('/api/authors')
-	// 	.expect(200)
-	// 	.expect('Content-Type', 'application/json; charset=utf-8')
-
-	// t.equal(response.body.total, 1, 'API returns 1 author');
+	t.equal(response.body.total, 2, 'API returns 2 authors');
 });
 
 test('GET single item Refs', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -307,6 +171,15 @@ test('GET single item Refs', async t => {
 	t.match(response.body, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Single item Ref ok");
 	t.match(response.body, {_id: ''+bookFromDb.author.id}, "Single item id ok");
 
+	response = null;
+	response = await supertest(fastify.server)
+		.get('/api/books/'+bookFromDb.id+'/coauthor')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.match(response.body, {firstName: bookFromDb.coauthor.firstName, lastName: bookFromDb.coauthor.lastName}, "Single item additional Ref ok");
+	t.match(response.body, {_id: ''+bookFromDb.coauthor.id}, "Single item additional ref id ok");
+
 	response = await supertest(fastify.server)
 		.get('/api/authors/'+bookFromDb.author.id+'/books')
 		.expect(200)
@@ -315,11 +188,30 @@ test('GET single item Refs', async t => {
 	t.equal(response.body.total, 1, 'API returns 1 refed book');
 	t.equal(response.body.items.length, 1, 'API returns 1 refed book');
 	t.match(response.body.items[0], {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Refed book");
+
+	response = await supertest(fastify.server)
+		.get('/api/authors/'+bookFromDb.coauthor.id+'/books')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 0, 'API returns no books where coauthor is author');
+	t.equal(response.body.items.length, 0, 'API returns no books where coauthor is author');
+
+
+	/// extra refs routes
+	response = await supertest(fastify.server)
+		.get('/api/authors/'+bookFromDb.coauthor.id+'/books_as_coauthor')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 1, 'API returns 1 refed book as coauthor');
+	t.equal(response.body.items.length, 1, 'API returns 1 refed book as coauthor');
+	t.match(response.body.items[0], {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Refed book");
 });
 
 test('GET single item with populated field', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -330,20 +222,41 @@ test('GET single item with populated field', async t => {
 	t.match(response.body, {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Book is ok");
 	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
 	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
+
+	response = await supertest(fastify.server)
+		.get('/api/books/'+bookFromDb.id+'?populate=coauthor')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.match(response.body, {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Book is ok");
+	t.match(response.body.coauthor, {firstName: bookFromDb.coauthor.firstName, lastName: bookFromDb.coauthor.lastName}, "Populated coauthor is ok");
+	t.match(response.body.coauthor, {_id: ''+bookFromDb.coauthor.id}, "Populated coauthor id is ok");
+
+	/// few populations
+	response = await supertest(fastify.server)
+		.get('/api/books/'+bookFromDb.id+'?populate[]=coauthor&populate[]=author')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.match(response.body, {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Book is ok");
+	t.match(response.body.coauthor, {firstName: bookFromDb.coauthor.firstName, lastName: bookFromDb.coauthor.lastName}, "Populated coauthor is ok");
+	t.match(response.body.coauthor, {_id: ''+bookFromDb.coauthor.id}, "Populated coauthor id is ok");
+	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
+	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
 });
 
 test('POST item with ref test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
 		.post('/api/books')
-		.send({title: 'Another One', isbn: 'isbn', author: ''+bookFromDb.author.id})
+		.send({title: 'Another One', isbn: 'isbn', author: ''+bookFromDb.author.id, coauthor: ''+bookFromDb.coauthor.id})
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
-	t.match(response.body, {title: 'Another One', isbn: 'isbn', author: ''+bookFromDb.author.id}, "POST api ok");
+	t.match(response.body, {title: 'Another One', isbn: 'isbn', author: ''+bookFromDb.author.id, coauthor: ''+bookFromDb.coauthor.id}, "POST api ok");
 
 	response = await supertest(fastify.server)
 		.get('/api/authors/'+bookFromDb.author.id+'/books')
@@ -352,11 +265,19 @@ test('POST item with ref test', async t => {
 
 	t.equal(response.body.total, 2, 'API returns 2 refed books');
 	t.equal(response.body.items.length, 2, 'API returns 2 refed books');
+
+	response = await supertest(fastify.server)
+		.get('/api/authors/'+bookFromDb.coauthor.id+'/books_as_coauthor')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 2, 'API returns 2 refed books as_coauthor');
+	t.equal(response.body.items.length, 2, 'API returns 2 refed books as_coauthor');
 });
 
 test('PATCH item test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -367,6 +288,7 @@ test('PATCH item test', async t => {
 
 	t.match(response.body, {title: 'The best book patched', isbn: 'The best isbn patched', author: ''+bookFromDb.author.id}, "PUT api ok");
 	t.match(response.body, {author: ''+bookFromDb.author.id}, "Author still refs to original");
+	t.match(response.body, {coauthor: ''+bookFromDb.coauthor.id}, "coAuthor still refs to original");
 });
 
 test('PUT item test', async t => {
@@ -386,7 +308,7 @@ test('PUT item test', async t => {
 
 test('DELETE item test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book updated'});
-	await bookFromDb.populate('author').execPopulate();
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
 	let author = bookFromDb.author;
 
 	let response = null;
@@ -404,16 +326,24 @@ test('DELETE item test', async t => {
 
 	t.equal(response.body.total, 1, 'API returns 1 refed books after delete');
 	t.equal(response.body.items.length, 1, 'API returns 1 refed books after delete');
+
+	response = await supertest(fastify.server)
+		.get('/api/authors/'+bookFromDb.coauthor.id+'/books_as_coauthor')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 1, 'API returns 1 refed books as_coauthor after delete');
+	t.equal(response.body.items.length, 1, 'API returns 1 refed books as_coauthor after delete');
 });
 
 test('POST item and return populated response test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'Another One'});
-	await bookFromDb.populate('author').execPopulate();
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
-		.post('/api/books?populate=author')
-		.send({title: 'The populated book', isbn: 'isbn', author: ''+bookFromDb.author.id})
+		.post('/api/books?populate[]=author&populate[]=coauthor')
+		.send({title: 'The populated book', isbn: 'isbn', author: ''+bookFromDb.author.id, coauthor: ''+bookFromDb.coauthor.id})
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 

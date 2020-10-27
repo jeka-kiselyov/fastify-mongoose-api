@@ -1,6 +1,7 @@
 
+
 class DefaultModelMethods {
-	
+
 	/**
 	 * [apiSubRoutes description]
 	 * @return {[type]} [description]
@@ -39,7 +40,16 @@ class DefaultModelMethods {
 				if (schematype && schematype.instance == 'ObjectID' && schematype.options && schematype.options.ref && schematype.options.ref == this.modelName) {
 					//// there is Ref to this model in other model
 					let pathname = model.prototype.collection.name;
-					subRoutes[pathname] = fExternal(model, refKey);
+					if (!subRoutes[pathname]) {
+						/// set up route as default name, /author/ID/books
+						subRoutes[pathname] = fExternal(model, refKey);
+					} else {
+						/// if there're few refs to same model, as Author and co-Author in book, set up additional routes
+						/// as /author/ID/books_as_coauthor
+						/// keeping the first default one
+						pathname+='_as_'+refKey;
+						subRoutes[pathname] = fExternal(model, refKey);
+					}
 				}
 			});
 		}
@@ -54,7 +64,7 @@ class DefaultModelMethods {
 	 */
 	static async apiPost(data) {
 		/// this points to model (schema.statics.)
-		let doc = new this; 
+		let doc = new this;
 
 		this.schema.eachPath((pathname, schematype) => {
 			if (data[pathname]) {

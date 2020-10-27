@@ -1,4 +1,4 @@
-
+const debug = require('debug')('fastify-mongoose-api');
 
 class APIRouter {
 	constructor(params = {}) {
@@ -41,20 +41,22 @@ class APIRouter {
 			this._apiSubRoutesFunctions = this._model['apiSubRoutes']();
 
 			for (let key of Object.keys(this._apiSubRoutesFunctions)) {
-				this._fastify.get(path+'/:id/'+key, {}, this.routeHandler('routeSub', key));				
+				this._fastify.get(path+'/:id/'+key, {}, this.routeHandler('routeSub', key));
 			}
 		}
+
+		debug('set up API path', path, 'sub routes: ', Object.keys(this._apiSubRoutesFunctions));
 	}
 
 	routeHandler(funcName, subRouteName = null) {
 		return async (request, reply) => {
 				if (typeof(this._checkAuth) === 'function') {
 					await this._checkAuth(request, reply);
-				} 
+				}
 				if (subRouteName) {
 					return await this.routeSub(subRouteName, request, reply);
 				} else {
-					return await this[funcName](request, reply);					
+					return await this[funcName](request, reply);
 				}
 			}
 	}
@@ -71,9 +73,9 @@ class APIRouter {
 		} else {
 			let data = this._apiSubRoutesFunctions[routeName](doc);
 			let ret = null;
-			
+
 			if (Object.getPrototypeOf(data) && Object.getPrototypeOf(data).constructor.name == 'Query') {
-				ret = await this.getListResponse(data, request, reply);				
+				ret = await this.getListResponse(data, request, reply);
 			} else {
 				data = await Promise.resolve(data);
 				if (Array.isArray(data)) {
@@ -82,9 +84,9 @@ class APIRouter {
 					const promises = data.map(this.docToAPIResponse);
 					ret.items = await Promise.all(promises);
 
-					ret.total = ret.items.length;				
+					ret.total = ret.items.length;
 				} else {
-					ret = await this.docToAPIResponse(data);					
+					ret = await this.docToAPIResponse(data);
 				}
 			}
 
@@ -100,12 +102,12 @@ class APIRouter {
 		let search = request.query.search ? request.query.search : null;
 		let match = request.query.match ? request.query.match : null;
 
-		let populate = request.query.populate ? request.query.populate : null;
+		let populate = request.query['populate[]'] ? request.query['populate[]'] : (request.query.populate ? request.query.populate : null);
 
 		let ret = {};
 
 		if (search) {
-			query = query.and({$text: {$search: search}});			
+			query = query.and({$text: {$search: search}});
 		}
 
 		if (filter) {
@@ -122,7 +124,7 @@ class APIRouter {
 			if (splet.length == 2) {
 				const matchOptions = {};
 				matchOptions[splet[0]] = {$regex: splet[1]};
-				query = query.and(matchOptions);	
+				query = query.and(matchOptions);
 			}
 		}
 
@@ -132,7 +134,13 @@ class APIRouter {
 		query.skip(offset);
 
 		if (populate) {
-			query.populate(populate);			
+			if (Array.isArray(populate)) {
+				for (let pop of populate) {
+					query.populate(pop);
+				}
+			} else {
+				query.populate(populate);
+			}
 		}
 
 		if (sort) {
@@ -152,20 +160,29 @@ class APIRouter {
 		reply.send(await this.getListResponse(query, request, reply));
 	}
 
-	async routePost(request, reply) {
-		let populate = request.query.populate ? request.query.populate : null;
-		let doc = await this._model.apiPost(request.body);
-
+	async populateIfNeeded(request, doc) {
+		let populate = request.query['populate[]'] ? request.query['populate[]'] : (request.query.populate ? request.query.populate : null);
 		if (populate) {
-			await doc.populate(populate).execPopulate();
+			if (Array.isArray(populate)) {
+				for (let pop of populate) {
+					doc.populate(pop);
+				}
+			} else {
+				doc.populate(populate);
+			}
+			await doc.execPopulate();
 		}
+	}
+
+	async routePost(request, reply) {
+		let doc = await this._model.apiPost(request.body);
+		await this.populateIfNeeded(request, doc);
 
 		reply.send(await this.docToAPIResponse(doc));
 	}
 
 	async routeGet(request, reply) {
 		let id = request.params.id || null;
-		let populate = request.query.populate ? request.query.populate : null;
 
 		let doc = null;
 		try {
@@ -174,19 +191,15 @@ class APIRouter {
 
 		if (!doc) {
 			reply.callNotFound();
-		} else {		
-			if (populate) {
-				await doc.populate(populate).execPopulate();
-			}
-
+		} else {
+			await this.populateIfNeeded(request, doc);
 			let ret = await this.docToAPIResponse(doc);
-			reply.send(ret);			
+			reply.send(ret);
 		}
 	}
 
 	async routePut(request, reply) {
 		let id = request.params.id || null;
-		let populate = request.query.populate ? request.query.populate : null;
 
 		let doc = null;
 		try {
@@ -197,13 +210,9 @@ class APIRouter {
 			reply.callNotFound();
 		} else {
 			await doc.apiPut(request.body);
-
-			if (populate) {
-				await doc.populate(populate).execPopulate();
-			}
-
+			await this.populateIfNeeded(request, doc);
 			let ret = await this.docToAPIResponse(doc);
-			reply.send(ret);		
+			reply.send(ret);
 		}
 	}
 
@@ -218,7 +227,7 @@ class APIRouter {
 			reply.callNotFound();
 		} else {
 			await doc.apiDelete();
-			reply.send({success: true});		
+			reply.send({success: true});
 		}
 	}
 

@@ -1,6 +1,6 @@
 # Fastify plugin to expose API for Mongoose MongoDB models
 
-If you are using [Fastify](https://github.com/fastify/fastify) as your server and [Mongoose](https://github.com/Automattic/mongoose) as your ODM, here is the easiest solution to run API server for your models.
+If you are using [Fastify](https://github.com/fastify/fastify) as your server and [Mongoose](https://github.com/Automattic/mongoose) as your ODM, here is the easiest solution to run API server for your models. fastify-mongoose-api generates REST routes with refs subroutes like `/api/author/AUTHORID/books` and `/api/books/BOOKID/author` based on MongoDB Mongoose models definitions with few lines of code.
 
 ### As simple as:
 ```javascript
@@ -46,7 +46,7 @@ fastify.register(fastifyMongooseAPI, options);
 
 with following options:
 
-#### .models : array of mongoose models 
+#### .models : array of mongoose models
 
 Required. Array of mongoose models. Usually you can get them from mongoose connection object like:
 ```javascript
@@ -75,19 +75,19 @@ Methods to initialize, `['list', 'get', 'post', 'patch', 'put', 'delete', 'optio
 Function to run before any API request to check authorization permissions in. Just throw an error in it if user is now allowed to perform an action.
 
 ```javascript
-  
+
 fastify.register(fastifyMongooseAPI, {
         models: this.db.connection.models,
         checkAuth: async (req, reply)=>{
           let ac = await this.db.AuthCode.findOne({authCode: req.cookies.authCode}).populate('user').exec(); /// fastify-cookie plugin for req.cookie
           if (!ac || !ac.user) {
             throw new Error('You are not authorized to be here');
-          }               
+          }
         }
     });
 ```
 
-## Sample Application 
+## Sample Application
 
 Sample application ([Source code](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app), [Live demo](https://fastify-mongoose-api-app.herokuapp.com/)) with Vue.js UI, simple Auth integration, ready to run on Heroku.
 
@@ -100,7 +100,7 @@ We are defining two classic models. Books and author with one to many relation b
 ``` javascript
 const mongoose = require('mongoose');
 const mongooseConnection = await mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true });
-    
+
 const authorSchema = mongoose.Schema({
     firstName: String,
     lastName: String,
@@ -141,7 +141,7 @@ await fastify.listen(8080);
 ### Sample application generated API routes
 
 |               | Method        | URL   |       |
-| ------------- | ------------- | ----- | ----- | 
+| ------------- | ------------- | ----- | ----- |
 | List all authors | GET | /api/authors | Pagination, sorting, search and filtering [are ready](#list-method-options) |
 | List all books | GET | /api/books | Want to get populated refs in response? [You can](#populate) |
 | Create new author | POST | /api/authors | Send properties using FormData [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
@@ -159,20 +159,20 @@ await fastify.listen(8080);
 Sample API response for `List all authors` method:
 
 ```javascript
-{ total: 2,                                 
+{ total: 2,
   items:
    [ { _id: '5d2620aff4df8b3c4f4f03d6',
        created: '2019-07-10T17:30:23.486Z',
-       firstName: 'Jay',            
-       lastName: 'Kay',             
+       firstName: 'Jay',
+       lastName: 'Kay',
        biography: 'Lived. Died.',
-       __v: 0 },                               
+       __v: 0 },
      { _id: '5d2620aff4df8b3c4f4f03d8',
        created: '2019-07-10T17:30:23.566Z',
        firstName: 'Hutin',
-       lastName: 'Puylo',               
+       lastName: 'Puylo',
        biography: 'The Little One',
-       __v: 0 } ] } 
+       __v: 0 } ] }
 ```
 
 ## List method options
@@ -221,7 +221,7 @@ Performs search by [full text mongodb indexes](https://docs.mongodb.com/manual/c
 
 ### Populate
 
-If you want API response to include nested objects, just pass populate string in parameter, it will run `populate(param)` before sending response to client.
+If you want API response to include nested objects, just pass populate string in parameter, it will run `populate(param)` before sending response to client. To populate few fields, pass them as array, `?populate[]=author&populate[]=shop`
 
 |         | Option Name | Default Value |
 | ------- | ----------- | ------------- |
@@ -254,6 +254,40 @@ and get a response of:
   }
 ```
 
+works very same, you can also pass `populate[]` array to populate few fields.
+
+## Subroutes when there're few refs to the same model
+
+By default, fastify-mongoose-api creates subroutes for external refs to your models, [sample](#sample-application-generated-api-routes). But what if there're few refs to the same model in your schema? Like:
+
+```javascript
+  const bookSchema = mongoose.Schema({
+    title: String,
+    isbn: String,
+    author: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Author'
+      },
+    coauthor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Author'
+      },
+    created: {
+      type: Date,
+      default: Date.now
+    }
+  });
+  const Book = mongooseConnection.model('Book', bookSchema);
+```
+
+In this special case, it will create extra routes:
+
+`/api/author/AUTHORID/books` - to list books where AUTHORID is the author (the first ref defined)
+and
+`/api/author/AUTHORID/books_as_coauthor` - to list books where AUHTORID is the co-author (next ref to the same model)
+
+while keeping expected internal refs GET routes of `/api/books/BOOKID/author` and `/api/books/BOOKID/coauthor`
+
 ## CORS
 
 How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/fastify/fastify-cors) works just fine:
@@ -261,7 +295,7 @@ How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/
 ```javascript
   const fastify = Fastify();
   fastify.register(fastifyFormbody);
-  fastify.register(require('fastify-cors'), { 
+  fastify.register(require('fastify-cors'), {
       // put your options here
   });
 
