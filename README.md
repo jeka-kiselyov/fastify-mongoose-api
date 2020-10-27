@@ -1,6 +1,6 @@
 # Fastify plugin to expose API for Mongoose MongoDB models
 
-If you are using [Fastify](https://github.com/fastify/fastify) as your server and [Mongoose](https://github.com/Automattic/mongoose) as your ODM, here is the easiest solution to run API server for your models. fastify-mongoose-api generates REST routes with refs subroutes like `/api/author/AUTHORID/books` and `/api/books/BOOKID/author` based on MongoDB Mongoose models definitions with few lines of code.
+If you are using [Fastify](https://github.com/fastify/fastify) as your server and [Mongoose](https://github.com/Automattic/mongoose) as your ODM, **fastify-mongoose-api** is the easiest solution to run API server for your models. **fastify-mongoose-api** generates REST routes with refs subroutes like `/api/author/AUTHORID/books` and `/api/books/BOOKID/author` based on MongoDB Mongoose models definitions with few lines of code.
 
 ### As simple as:
 ```javascript
@@ -24,6 +24,7 @@ await fastify.listen(8080); /// running the server
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, sorting, filtering, regext match, populate)](#list-method-options)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
+- [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [How to implement authorization?](#checkauth--function)
 - [Unit tests](#tests)
