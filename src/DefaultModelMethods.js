@@ -22,7 +22,7 @@ class DefaultModelMethods {
 				const whereOptions = {};
 				whereOptions[refKey] = doc;
 
-	 			return externalModel.find().where(whereOptions);
+				return externalModel.find().where(whereOptions);
 			};
 		};
 
@@ -66,7 +66,7 @@ class DefaultModelMethods {
 		/// this points to model (schema.statics.)
 		let doc = new this;
 
-		this.schema.eachPath((pathname, schematype) => {
+		this.schema.eachPath((pathname) => {
 			if (data[pathname]) {
 				doc[pathname] = data[pathname];
 			}
@@ -91,7 +91,7 @@ class DefaultModelMethods {
 	 */
 	async apiPut(data) {
 		//// this points to document (schema.methods.)
-		this.schema.eachPath((pathname, schematype) => {
+		this.schema.eachPath((pathname) => {
 			if (data[pathname]) {
 				this[pathname] = data[pathname];
 			} else if (data[pathname] === null) {
@@ -106,7 +106,7 @@ class DefaultModelMethods {
 	 * [apiDelete description]
 	 * @return Boolean	success
 	 */
-	async apiDelete(data) {
+	async apiDelete() {
 		//// this points to document (schema.methods.)
 		await this.remove();
 

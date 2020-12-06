@@ -66,7 +66,9 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {}
+		} catch(e) {
+			doc = null;
+		}
 
 		if (!doc) {
 			reply.callNotFound();
@@ -94,7 +96,7 @@ class APIRouter {
 		}
 	}
 
-	async getListResponse(query, request, reply) {
+	async getListResponse(query, request) {
 		let offset = request.query.offset ? parseInt(request.query.offset, 10) : 0;
 		let limit = request.query.limit ? parseInt(request.query.limit, 10) : 100;
 		let sort = request.query.sort ? request.query.sort : null;
@@ -187,7 +189,9 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {}
+		} catch(e) {
+			doc = null;
+		}
 
 		if (!doc) {
 			reply.callNotFound();
@@ -204,7 +208,9 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {}
+		} catch(e) {
+			doc = null;
+		}
 
 		if (!doc) {
 			reply.callNotFound();
@@ -221,7 +227,9 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {}
+		} catch(e) {
+			doc = null;
+		}
 
 		if (!doc) {
 			reply.callNotFound();
