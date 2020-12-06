@@ -1,4 +1,9 @@
 language: node_js
+before_script:
+  - sleep 15
+  - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
+services:
+  - mongodb
 node_js:
   - "10"
   - "12"
@@ -6,4 +11,3 @@ node_js:
   - "15"
 
 sudo: false
-after_success: npm run coverage
