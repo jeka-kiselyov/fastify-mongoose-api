@@ -1,6 +1,6 @@
 {
   "name": "fastify-mongoose-api",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "API for Mongoose models in one line of code",
   "main": "fastify-mongoose-api.js",
   "scripts": {
@@ -27,9 +27,11 @@
     "mongoose": "^5.5.4"
   },
   "devDependencies": {
+    "eslint": "^7.15.0",
     "grunt": "^1.0.4",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-env": "^0.4.4",
+    "grunt-eslint": "^23.0.0",
     "grunt-tape": "^0.1.0",
     "supertest": "^4.0.2",
     "tap": "^13.0.4"
