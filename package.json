@@ -28,7 +28,6 @@
     "grunt": "^1.0.4",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-env": "^0.4.4",
-    "grunt-node-tap": "^1.0.0",
     "grunt-tape": "^0.1.0",
     "supertest": "^4.0.2",
     "tap": "^13.0.4"
