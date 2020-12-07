@@ -294,6 +294,17 @@ test('GET single item', async t => {
 	// t.equal(response.body.total, 1, 'API returns 1 author');
 });
 
+
+test('GET single item 404', async t => {
+	let response = null;
+	response = await supertest(fastify.server)
+		.get('/api/books/SOMEWRONGID')
+		.expect(404)
+		.expect('Content-Type', 'application/json; charset=utf-8');
+
+	t.equal(response.status, 404);
+});
+
 test('GET single item Refs', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
 	await bookFromDb.populate('author').execPopulate();
@@ -369,6 +380,16 @@ test('PATCH item test', async t => {
 	t.match(response.body, {author: ''+bookFromDb.author.id}, "Author still refs to original");
 });
 
+test('PATCH single item 404', async t => {
+	let response = null;
+	response = await supertest(fastify.server)
+		.patch('/api/books/SOMEWRONGID')
+		.expect(404)
+		.expect('Content-Type', 'application/json; charset=utf-8');
+
+	t.equal(response.status, 404);
+});
+
 test('PUT item test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book patched'});
 	await bookFromDb.populate('author').execPopulate();
@@ -382,6 +403,16 @@ test('PUT item test', async t => {
 
 	t.match(response.body, {title: 'The best book updated', isbn: 'The best isbn updated', author: ''+bookFromDb.author.id}, "PUT api ok");
 	t.match(response.body, {author: ''+bookFromDb.author.id}, "Author still refs to original");
+});
+
+test('PUT single item 404', async t => {
+	let response = null;
+	response = await supertest(fastify.server)
+		.put('/api/books/SOMEWRONGID')
+		.expect(404)
+		.expect('Content-Type', 'application/json; charset=utf-8');
+
+	t.equal(response.status, 404);
 });
 
 test('DELETE item test', async t => {
@@ -404,6 +435,16 @@ test('DELETE item test', async t => {
 
 	t.equal(response.body.total, 1, 'API returns 1 refed books after delete');
 	t.equal(response.body.items.length, 1, 'API returns 1 refed books after delete');
+});
+
+test('DELETE single item 404', async t => {
+	let response = null;
+	response = await supertest(fastify.server)
+		.delete('/api/books/SOMEWRONGID')
+		.expect(404)
+		.expect('Content-Type', 'application/json; charset=utf-8');
+
+	t.equal(response.status, 404);
 });
 
 test('POST item and return populated response test', async t => {
