@@ -3,21 +3,20 @@ const DefaultModelMethods = require('./DefaultModelMethods.js');
 
 class API {
 	constructor(params = {}) {
-		this._models = params.models || null;
-		this._fastify = params.fastify || null;
+		this._models = params.models;
+		this._fastify = params.fastify;
+
+		if (!this._models || !this._fastify) {
+			throw 'Please initialize fastify-mongoose-api with fastify.register() with required models parameter';
+		}
 
 		this._checkAuth = params.checkAuth || null;
 		this._defaultModelMethods = params.defaultModelMethods || DefaultModelMethods;
 
 		this._apiRouters = {};
 
-		// this.setUpServer();
-		if (this._models) {
-			for (let key of Object.keys(this._models)) {
-				this.addModel(this._models[key], params);
-			}			
-		} else {
-			this._models = [];
+		for (let key of Object.keys(this._models)) {
+			this.addModel(this._models[key], params);
 		}
 	}
 
@@ -61,21 +60,21 @@ class API {
 	decorateModelWithDefaultAPIMethods(model) {
 		if (model.schema) {
 			if (!model.prototype['apiValues']) {
-				model.prototype['apiValues'] = this._defaultModelMethods.prototype.apiValues;				
+				model.prototype['apiValues'] = this._defaultModelMethods.prototype.apiValues;
 			}
 			if (!model.prototype['apiPut']) {
-				model.prototype['apiPut'] = this._defaultModelMethods.prototype.apiPut;				
+				model.prototype['apiPut'] = this._defaultModelMethods.prototype.apiPut;
 			}
 			if (!model.prototype['apiDelete']) {
-				model.prototype['apiDelete'] = this._defaultModelMethods.prototype.apiDelete;				
+				model.prototype['apiDelete'] = this._defaultModelMethods.prototype.apiDelete;
 			}
 
 
 			if (!model.apiPost) {
-				model.apiPost = this._defaultModelMethods.apiPost;				
+				model.apiPost = this._defaultModelMethods.apiPost;
 			}
 			if (!model.apiSubRoutes) {
-				model.apiSubRoutes = this._defaultModelMethods.apiSubRoutes;				
+				model.apiSubRoutes = this._defaultModelMethods.apiSubRoutes;
 			}
 		}
 	}

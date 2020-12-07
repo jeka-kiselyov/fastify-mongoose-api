@@ -40,6 +40,17 @@ test('schema initialization', async t => {
 	t.ok(mongooseConnection.models.Test);
 });
 
+test('does not let initialize plugin class directly', async t => {
+	t.throws(() => {
+		const obj = new fastifyMongooseAPI();
+	});
+	t.throws(() => {
+		const obj = new fastifyMongooseAPI({fastify: 1});
+	});
+	t.throws(() => {
+		const obj = new fastifyMongooseAPI({models: 3});
+	});
+});
 
 test('initialization of API server', async t => {
 	///// setting up the server
