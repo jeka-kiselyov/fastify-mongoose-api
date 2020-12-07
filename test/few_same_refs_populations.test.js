@@ -245,6 +245,36 @@ test('GET single item with populated field', async t => {
 	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
 });
 
+test('GET collection with few populated', async t => {
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
+
+	let response = null;
+	response = await supertest(fastify.server)
+		.get('/api/books?populate[]=coauthor&populate[]=author')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 1, 'API returns 1 book');
+	t.match(response.body.items[0].coauthor, {_id: ''+bookFromDb.coauthor.id}, "Populated coauthor id is ok");
+	t.match(response.body.items[0].author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
+});
+
+test('GET collection with single populated', async t => {
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
+	await bookFromDb.populate('author').populate('coauthor').execPopulate();
+
+	let response = null;
+	response = await supertest(fastify.server)
+		.get('/api/books?populate=coauthor')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 1, 'API returns 1 book');
+	t.match(response.body.items[0].coauthor, {_id: ''+bookFromDb.coauthor.id}, "Populated coauthor id is ok");
+	t.equal(response.body.items[0].author, ''+bookFromDb.author.id, "Author was not populated, there is just id");
+});
+
 test('POST item with ref test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
 	await bookFromDb.populate('author').populate('coauthor').execPopulate();
