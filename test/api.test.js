@@ -266,6 +266,38 @@ test('GET collection pagination', async t => {
 	t.match(response.body.items[0], {firstName: 'Jay'}, "Older is on the second page");
 });
 
+test('GET collection projection', async t => {
+	let response = null;
+
+	response = await supertest(fastify.server)
+		.get('/api/authors')
+		.query({ fields: 'firstName,lastName' }) //// URL GET parameters
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 2, 'Total is everything');
+	t.equal(response.body.items.length, 2, 'API returns everything');
+	t.same(Object.keys(response.body.items[0]), [ '_id', 'firstName', 'lastName' ], "Only contains projection and _id");
+	t.same(Object.keys(response.body.items[1]), [ '_id', 'firstName', 'lastName' ], "Only contains projection and _id");
+
+	response = await supertest(fastify.server)
+		.get('/api/authors')
+		.query({ fields: '-firstName,-lastName,-__v' }) //// URL GET parameters
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.equal(response.body.total, 2, 'Total is everything');
+	t.equal(response.body.items.length, 2, 'API returns everything');
+	t.same(Object.keys(response.body.items[0]), [ '_id', 'created', 'biography' ], "Exclude projection fields");
+	t.same(Object.keys(response.body.items[1]), [ '_id', 'created', 'biography' ], "Exclude projection fields");
+
+	t.rejects(await supertest(fastify.server)
+		.get('/api/authors')
+		.query({ fields: '-firstName,lastName' }) //// URL GET parameters
+		.expect(500)
+		.expect('Content-Type', 'application/json; charset=utf-8'));
+});
+
 test('GET single item', async t => {
 	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'});
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
