@@ -103,6 +103,7 @@ class APIRouter {
 		let filter = request.query.filter ? request.query.filter : null;
 		let search = request.query.search ? request.query.search : null;
 		let match = request.query.match ? request.query.match : null;
+		let fields = request.query.fields ? request.query.fields : null;
 
 		let populate = request.query['populate[]'] ? request.query['populate[]'] : (request.query.populate ? request.query.populate : null);
 
@@ -147,6 +148,10 @@ class APIRouter {
 
 		if (sort) {
 			query.sort(sort);
+		}
+
+		if (fields) {
+			query.select(fields.split(','));
 		}
 
 		let docs = await query.find().exec();

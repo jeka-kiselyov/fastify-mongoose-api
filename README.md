@@ -225,6 +225,14 @@ Performs search by [full text mongodb indexes](https://docs.mongodb.com/manual/c
 | ------- | ----------- | ------------- |
 | Search  | search      | null          |
 
+### Projection
+
+Projects the first element in an array that matches the field. `/api/authors?fields=firstName,lastName` will only return `_id, firstName, lastName`. You can also exclude fields by using `-`, i.e. `?fields=-firstName` which will return everything except the `firstName` field.
+
+|          | Option Name | Default Value |
+| -------- | ----------- | ------------- |
+|Projection| fields      | null          |
+
 ### Populate
 
 If you want API response to include nested objects, just pass populate string in parameter, it will run `populate(param)` before sending response to client. To populate few fields, pass them as array, `?populate[]=author&populate[]=shop`
