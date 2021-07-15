@@ -218,6 +218,19 @@ Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnv
 | ------- | ----------- | ------------- |
 | Filter  | filter      | null          |
 
+#### Filtering by Boolean property
+
+Though you pass property value directly as boolean to create new entity or update one:
+```javascript
+await axios.post('/api/books', {title: 'Some Book', isGood: false});
+```
+
+Filtering by that value may be implemented using number representation of boolean (0/1):
+```javascript
+await axios.get('/api/books', {params: {filter: 'isGood=0'}});
+```
+
+See [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/boolean_fields.test.js)
 
 ### Regex match
 
