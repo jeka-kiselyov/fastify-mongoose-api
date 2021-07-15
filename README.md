@@ -160,7 +160,7 @@ await fastify.listen(8080);
 | Delete book | DELETE | /api/books/BOOKID | Be careful |
 | Delete author | DELETE | /api/authors/AUTHORID |   |
 
-## Post body sample on frontend
+## Post/Put sample on frontend
 
 ```javascript
 await axios.post('/api/books', {title: 'The Book'});
