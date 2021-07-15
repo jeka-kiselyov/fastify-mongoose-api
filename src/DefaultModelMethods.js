@@ -67,7 +67,7 @@ class DefaultModelMethods {
 		let doc = new this;
 
 		this.schema.eachPath((pathname) => {
-			if (data[pathname]) {
+			if (data[pathname] !== undefined) {
 				doc[pathname] = data[pathname];
 			}
 		});
@@ -92,7 +92,7 @@ class DefaultModelMethods {
 	async apiPut(data) {
 		//// this points to document (schema.methods.)
 		this.schema.eachPath((pathname) => {
-			if (data[pathname]) {
+			if (data[pathname] !== undefined) {
 				this[pathname] = data[pathname];
 			} else if (data[pathname] === null) {
 				this[pathname] = undefined;
