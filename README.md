@@ -150,15 +150,24 @@ await fastify.listen(8080);
 | ------------- | ------------- | ----- | ----- |
 | List all authors | GET | /api/authors | Pagination, sorting, search and filtering [are ready](#list-method-options) |
 | List all books | GET | /api/books | Want to get populated refs in response? [You can](#populate) |
-| Create new author | POST | /api/authors | Send properties using FormData [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
+| Create new author | POST | /api/authors | Send properties with post body [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
 | Create new book | POST | /api/books |  |
 | Get single author | GET | /api/authors/AUTHORID | |
 | Get author books | GET | /api/authors/AUTHORID/books | Plugin builds relations based on models definition |
 | Get book author | GET | /api/books/BOOKID/author | Same in reverse way |
-| Update author | PUT | /api/authors/AUTHORID | Send properties using FormData |
+| Update author | PUT | /api/authors/AUTHORID | Send properties using post body |
 | Update book | PUT | /api/books/BOOKID |   |
 | Delete book | DELETE | /api/books/BOOKID | Be careful |
 | Delete author | DELETE | /api/authors/AUTHORID |   |
+
+## Post body sample on frontend
+
+```javascript
+await this.axios.post('/api/books', {title: 'The Book'});
+await this.axios.put('/api/books/xxxxx', {title: 'The Book Updated'});
+await this.axios.put('/api/books/xxxxx', {title: 'The Book Updated'}, {params: {populate: 'author'}});
+
+```
 
 ## List method response sample
 
