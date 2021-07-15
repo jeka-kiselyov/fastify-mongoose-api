@@ -163,9 +163,9 @@ await fastify.listen(8080);
 ## Post body sample on frontend
 
 ```javascript
-await this.axios.post('/api/books', {title: 'The Book'});
-await this.axios.put('/api/books/xxxxx', {title: 'The Book Updated'});
-await this.axios.put('/api/books/xxxxx', {title: 'The Book Updated'}, {params: {populate: 'author'}});
+await axios.post('/api/books', {title: 'The Book'});
+await axios.put('/api/books/xxxxx', {title: 'The Book Updated'});
+await axios.put('/api/books/xxxxx', {title: 'The Book Updated'}, {params: {populate: 'author'}});
 
 ```
 
