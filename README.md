@@ -26,6 +26,7 @@ await fastify.listen(8080); /// running the server
 - [Initialization and parameters](#initialization)
 - Sample application ([Source code](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app), [Live demo](https://fastify-mongoose-api-app.herokuapp.com/))
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
+- [POST/PUT on frontend samples](#postput-sample-on-frontend)
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, projection, sorting, filtering, regext match, populate)](#list-method-options)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
