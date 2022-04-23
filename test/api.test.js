@@ -13,6 +13,7 @@ const fastifyFormbody = require('fastify-formbody');
 const FASTIFY_PORT = 3137;
 const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
 
+const BackwardWrapper = require('./BackwardWrapper.js');
 
 let mongooseConnection = null;
 let fastify = null;
@@ -20,7 +21,7 @@ let fastify = null;
 test('mongoose db initialization', async t => {
 	t.plan(2);
 
-	mongooseConnection = await mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true });
+	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
     t.ok(mongooseConnection);
     t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
@@ -87,7 +88,7 @@ test('schema ok', async t => {
 	t.ok(authorFromDb);
 	t.ok(bookFromDb);
 
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
 	t.equal(''+bookFromDb.author._id, ''+authorFromDb._id);
 });
@@ -223,9 +224,7 @@ test('GET collection sorting', async t => {
 		.get('/api/authors')
 		.query({ sort: 'created' }) //// URL GET parameters
 		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	// console.log(response.body);
+		.expect('Content-Type', 'application/json; charset=utf-8');
 
 	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
 	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
@@ -339,7 +338,7 @@ test('GET single item 404', async t => {
 
 test('GET single item Refs', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -352,7 +351,7 @@ test('GET single item Refs', async t => {
 
 	response = await supertest(fastify.server)
 		.get('/api/authors/'+bookFromDb.author.id+'/books')
-		.expect(200)
+		// .expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
 	t.equal(response.body.total, 1, 'API returns 1 refed book');
@@ -362,7 +361,8 @@ test('GET single item Refs', async t => {
 
 test('GET single item with populated field', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	// await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -377,7 +377,8 @@ test('GET single item with populated field', async t => {
 
 test('POST item with ref test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -399,7 +400,8 @@ test('POST item with ref test', async t => {
 
 test('PATCH item test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -424,7 +426,8 @@ test('PATCH single item 404', async t => {
 
 test('PUT item test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book patched'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -449,7 +452,8 @@ test('PUT single item 404', async t => {
 
 test('DELETE item test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book updated'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 	let author = bookFromDb.author;
 
 	let response = null;
@@ -481,7 +485,8 @@ test('DELETE single item 404', async t => {
 
 test('POST item and return populated response test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'Another One'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
@@ -497,7 +502,8 @@ test('POST item and return populated response test', async t => {
 
 test('PUT item and return populated response test', async t => {
 	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The populated book'});
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 
 	let response = null;
 	response = await supertest(fastify.server)
