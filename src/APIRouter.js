@@ -131,7 +131,12 @@ class APIRouter {
 			}
 		}
 
-		ret.total = await query.countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
+		if (query.clone) {
+			// mongoose > 6.0
+			ret.total = await query.clone().countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
+		} else {
+			ret.total = await query.countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
+		}
 
 		query.limit(limit);
 		query.skip(offset);
@@ -170,14 +175,23 @@ class APIRouter {
 	async populateIfNeeded(request, doc) {
 		let populate = request.query['populate[]'] ? request.query['populate[]'] : (request.query.populate ? request.query.populate : null);
 		if (populate) {
+			let populated = null;
 			if (Array.isArray(populate)) {
-				for (let pop of populate) {
-					doc.populate(pop);
-				}
+				populated = doc.populate(populate);
+				// for (let pop of populate) {
+				// 	doc.populate(pop);
+				// }
 			} else {
-				doc.populate(populate);
+				populated = doc.populate(populate);
 			}
-			await doc.execPopulate();
+
+			if (populated.execPopulate) {
+				await populated.execPopulate();
+			} else {
+				await populated;
+			}
+
+			// await doc.execPopulate();
 		}
 	}
 

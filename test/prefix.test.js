@@ -13,6 +13,8 @@ const fastifyFormbody = require('fastify-formbody');
 const FASTIFY_PORT = 3137;
 const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
 
+const BackwardWrapper = require('./BackwardWrapper.js');
+
 
 let mongooseConnection = null;
 let fastify = null;
@@ -20,7 +22,7 @@ let fastify = null;
 test('mongoose db initialization', async t => {
 	t.plan(2);
 
-	mongooseConnection = await mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true });
+	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
     t.ok(mongooseConnection);
     t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
@@ -32,7 +34,7 @@ test('schema initialization', async t => {
 		firstName: String,
 		lastName: String,
 		biography: String,
-		created: { 
+		created: {
 			type: Date,
 			default: Date.now
 		}
@@ -44,11 +46,11 @@ test('schema initialization', async t => {
 	const bookSchema = mongoose.Schema({
 		title: String,
 		isbn: String,
-		author: { 
-	        type: mongoose.Schema.Types.ObjectId, 
+		author: {
+	        type: mongoose.Schema.Types.ObjectId,
 	        ref: 'Author'
 	    },
-		created: { 
+		created: {
 			type: Date,
 			default: Date.now
 		}
@@ -87,7 +89,8 @@ test('schema ok', async t => {
 	t.ok(authorFromDb);
 	t.ok(bookFromDb);
 
-	await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	// await bookFromDb.populate('author').execPopulate();
 
 	t.equal(''+bookFromDb.author._id, ''+authorFromDb._id);
 });
@@ -97,10 +100,10 @@ test('schema ok', async t => {
 test('initialization of API server', async t => {
 	///// setting up the server
 	fastify = Fastify();
-	// 
+	//
 	// // //// need this to handle post/put/patch request parameters
 	fastify.register(fastifyFormbody);
-	
+
 	fastify.register(fastifyMongooseAPI, {
 			models: mongooseConnection.models,
 			prefix: '/someroute/',
@@ -129,14 +132,14 @@ test('GET collection endpoints', async t => {
 		.get('/someroute/books')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
-	
+
 	t.equal(response.body.total, 1, 'API returns 1 book');
 
 	response = await supertest(fastify.server)
 		.get('/someroute/authors')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
-	
+
 	t.equal(response.body.total, 1, 'API returns 1 author');
 });
 

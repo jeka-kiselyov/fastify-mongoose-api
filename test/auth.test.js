@@ -13,6 +13,7 @@ const fastifyFormbody = require('fastify-formbody');
 const FASTIFY_PORT = 3137;
 const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
 
+const BackwardWrapper = require('./BackwardWrapper.js');
 
 let mongooseConnection = null;
 let fastify = null;
@@ -22,7 +23,7 @@ let isAuthedTestBoolean = false;
 test('mongoose db initialization', async t => {
 	t.plan(2);
 
-	mongooseConnection = await mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true });
+	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
     t.ok(mongooseConnection);
     t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
@@ -34,7 +35,7 @@ test('schema initialization', async t => {
 		firstName: String,
 		lastName: String,
 		biography: String,
-		created: { 
+		created: {
 			type: Date,
 			default: Date.now
 		}
@@ -46,11 +47,11 @@ test('schema initialization', async t => {
 	const bookSchema = mongoose.Schema({
 		title: String,
 		isbn: String,
-		author: { 
-	        type: mongoose.Schema.Types.ObjectId, 
+		author: {
+	        type: mongoose.Schema.Types.ObjectId,
 	        ref: 'Author'
 	    },
-		created: { 
+		created: {
 			type: Date,
 			default: Date.now
 		}
@@ -71,10 +72,10 @@ test('clean up test collections', async t => {
 test('initialization of API server', async t => {
 	///// setting up the server
 	fastify = Fastify();
-	// 
+	//
 	// // //// need this to handle post/put/patch request parameters
 	fastify.register(fastifyFormbody);
-	
+
 	fastify.register(fastifyMongooseAPI, {
 			models: mongooseConnection.models,
 			prefix: '/api/',
@@ -110,7 +111,7 @@ test('Test Auth (not)', async t => {
 
 
 test('Test Auth (authed)', async t => {
-	//// sign in 
+	//// sign in
 	isAuthedTestBoolean = true;
 	////
 
@@ -119,7 +120,7 @@ test('Test Auth (authed)', async t => {
 		.get('/api/books')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
-	
+
 	t.match(response.body, {total: 0}, "There is response");
 
 	response = await supertest(fastify.server)

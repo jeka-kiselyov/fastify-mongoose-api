@@ -12,7 +12,14 @@ class DefaultModelMethods {
 
 		let fPopulated = (pathname)=>{
 			return async(doc) => {
-				await doc.populate(pathname).execPopulate();
+				const populate = doc.populate(pathname);
+				if (populate.execPopulate) {
+					await populate.execPopulate();
+				} else {
+					await populate;
+				}
+
+				// await doc.populate(pathname).execPopulate();
 				return doc[pathname];
 			};
 		};
