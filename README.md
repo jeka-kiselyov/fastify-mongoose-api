@@ -347,6 +347,7 @@ How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/
   await fastify.listen(args.port);
 ```
 
+
 ## Tests
 
 Clone fastify-mongoose-api, run `npm install` in its directory and run `grunt` or `npm test` to run [unit tests](https://github.com/jeka-kiselyov/fastify-mongoose-api/tree/master/test), or `grunt watchtests` to run unit tests on each file change (development mode).
