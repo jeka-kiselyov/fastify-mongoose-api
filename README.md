@@ -31,6 +31,7 @@ await fastify.listen(8080); /// running the server
 - [LIST methods options (pagination, projection, sorting, filtering, regext match, populate)](#list-method-options)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
+- [How to hide document properties/fields in API response?](#hide-data)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [How to implement authorization?](#checkauth--function)
 - [Unit tests](#tests)
@@ -324,6 +325,33 @@ and
 `/api/author/AUTHORID/books_as_coauthor` - to list books where AUHTORID is the co-author (next ref to the same model)
 
 while keeping expected internal refs GET routes of `/api/books/BOOKID/author` and `/api/books/BOOKID/coauthor`
+
+## How to hide specific fields/properties in API response
+
+fastify-mongoose-api adds [.apiValues()](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js) method to every mongoose model without it. You can define your own:
+
+```javascript
+  const bookSchema = mongoose.Schema({
+    title: String,
+    isbn: String,
+    created: {
+      type: Date,
+      default: Date.now
+    },
+    password: String,
+  });
+
+  // we defined apiValues response change to check if it works for refs response
+  bookSchema.methods.apiValues = function() {
+    const object = this.toObject({depopulate: true});
+    object.isbn = 'hidden';
+    delete object.password;
+
+    return object;
+  };
+```
+
+so it will always display `isbn` value as `hidden` in API response and never show anything for `password` field.
 
 ## CORS
 

@@ -44,6 +44,7 @@ class DefaultModelMethods {
 		for (let key of Object.keys(this.db.models)) {
 			let model = this.db.models[key];
 			model.schema.eachPath((refKey, schematype) => {
+
 				if (schematype && schematype.instance == 'ObjectID' && schematype.options && schematype.options.ref && schematype.options.ref == this.modelName) {
 					//// there is Ref to this model in other model
 					let pathname = model.prototype.collection.name;
@@ -57,7 +58,25 @@ class DefaultModelMethods {
 						pathname+='_as_'+refKey;
 						subRoutes[pathname] = fExternal(model, refKey);
 					}
+				} else if (schematype && schematype.instance == 'Array' && schematype.options && schematype.options.type && schematype.options.type[0] && schematype.options.type[0].ref == this.modelName) {
+					//// Refs as the array of ObjectId
+					//// like:
+					////  inspired: [{ type : mongoose.Schema.Types.ObjectId, ref: 'Book' }],
+					//// there is Ref to this model in other model
+					let pathname = model.prototype.collection.name;
+					if (!subRoutes[pathname]) {
+						/// set up route as default name, /author/ID/books
+						subRoutes[pathname] = fExternal(model, refKey);
+					} else {
+						/// if there're few refs to same model, as Author and co-Author in book, set up additional routes
+						/// as /author/ID/books_as_coauthor
+						/// keeping the first default one
+						pathname+='_as_'+refKey;
+						subRoutes[pathname] = fExternal(model, refKey);
+					}
+
 				}
+
 			});
 		}
 
@@ -88,7 +107,59 @@ class DefaultModelMethods {
 	 * @return {[type]} [description]
 	 */
 	async apiValues() {
-		return this.toObject();
+		// complex logic below is to be sure deeper populated object are covered by their .apiValues()
+		// method.
+		// If you don't need this, just use simple:
+		// return this.toObject({depopulate: true});
+		// instead
+		// But please be sure you understand it doesn't proceed populated documents with apiValues() and
+		// you may end showing off data you wanted to keep private.
+
+		let areThereDeepObjects = false;
+		let deepObjectsPromisesArray = [];
+		const deepObjectsPromisesResults = {};
+
+		// 2 steps
+		// 1 - run regular toObject processing and check if there're deeper documents we may need to transform
+		// 2 - run toObject processing updaing deeper objects with their .apiValues() results
+
+		const transform = (doc, ret)=>{
+			if (doc === this) {
+				return ret;
+			} else {
+				areThereDeepObjects = true;
+
+				const deeperApiValues = doc.apiValues();
+				if (typeof deeperApiValues?.then === 'function') {
+					deepObjectsPromisesArray.push(deeperApiValues.then((res)=>{
+							deepObjectsPromisesResults[doc.id] = res;
+						}));
+				} else {
+					deepObjectsPromisesResults[doc.id] = deeperApiValues;
+				}
+				return null; // to be covered later
+			}
+		};
+
+		const firstResult = this.toObject({transform: transform});
+
+		if (!areThereDeepObjects) {
+			// return data after 1st step if there's nothing deeper
+			return firstResult;
+		}
+
+		// await for promises, if any
+		await Promise.all(deepObjectsPromisesArray);
+
+		const transformDeeper = (doc, ret)=>{
+			if (doc === this) {
+				return ret;
+			} else {
+				return deepObjectsPromisesResults[doc.id];
+			}
+		};
+
+		return this.toObject({transform: transformDeeper});
 	}
 
 	/**
