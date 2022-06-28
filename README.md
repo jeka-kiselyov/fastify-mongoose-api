@@ -29,6 +29,7 @@ await fastify.listen(8080); /// running the server
 - [POST/PUT on frontend samples](#postput-sample-on-frontend)
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, projection, sorting, filtering, regext match, populate)](#list-method-options)
+- [Handle extra LIST cases, custom filtering etc](#handle-extra-cases)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
 - [How to hide document properties/fields in API response?](#how-to-hide-specific-fieldsproperties-in-api-response)
