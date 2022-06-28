@@ -265,7 +265,7 @@ If you want API response to include nested objects, just pass populate string in
 | ------- | ----------- | ------------- |
 | Populate| populate    | null          |
 
-### Extra cases handling
+### Handle extra cases
 
 You can create hook method on any model to handle its List requests.
 
