@@ -131,6 +131,10 @@ class APIRouter {
 			}
 		}
 
+		if (this._model.onListQuery) {
+			await this._model.onListQuery(query, request);
+		}
+
 		if (query.clone) {
 			// mongoose > 6.0
 			ret.total = await query.clone().countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
@@ -196,7 +200,7 @@ class APIRouter {
 	}
 
 	async routePost(request, reply) {
-		let doc = await this._model.apiPost(request.body);
+		let doc = await this._model.apiPost(request.body, request);
 		await this.populateIfNeeded(request, doc);
 
 		reply.send(await this.docToAPIResponse(doc));
@@ -234,7 +238,7 @@ class APIRouter {
 		if (!doc) {
 			reply.callNotFound();
 		} else {
-			await doc.apiPut(request.body);
+			await doc.apiPut(request.body, request);
 			await this.populateIfNeeded(request, doc);
 			let ret = await this.docToAPIResponse(doc);
 			reply.send(ret);
@@ -253,7 +257,7 @@ class APIRouter {
 		if (!doc) {
 			reply.callNotFound();
 		} else {
-			await doc.apiDelete();
+			await doc.apiDelete(request);
 			reply.send({success: true});
 		}
 	}

@@ -265,6 +265,21 @@ If you want API response to include nested objects, just pass populate string in
 | ------- | ----------- | ------------- |
 | Populate| populate    | null          |
 
+### Extra cases handling
+
+You can create hook method on any model to handle its List requests.
+
+```javascript
+  schema.statics.onListQuery = async function(query, request) {
+      let notSeen = request.query.notSeen ? request.query.notSeen : null;
+      if (notSeen) {
+          query = query.and({sawBy: {$ne: request.user._id}});
+      }
+  }
+```
+query is Mongoose query object, so you can extend it by any [query object's methods](https://mongoosejs.com/docs/api.html#Query) depending on your state or request data.
+
+Note: **do not** return anything in this method.
 
 ## Populate on POST, PUT and single item GET methods
 
