@@ -10,7 +10,7 @@ If you are using [Fastify](https://github.com/fastify/fastify) as your server an
 ### As simple as:
 ```javascript
 const fastify = Fastify();
-fastify.register(fastifyFormbody); /// need form body to accept API parameters
+fastify.register(fastifyFormbody); /// need form body to accept API parameters, both fastify-formbody and @fastify/formbody would work here
 fastify.register(fastifyMongooseAPI, {  /// here we are registering our plugin
     models: mongooseConnection.models,  /// Mongoose connection models
     prefix: '/api/',                    /// URL prefix. e.g. http://localhost/api/...
@@ -49,7 +49,7 @@ Register plugin on fastify instance:
 
 ```javascript
 const fastify = Fastify();
-fastify.register(fastifyFormbody);
+fastify.register(fastifyFormbody); // both fastify-formbody and @fastify/formbody would work
 fastify.register(fastifyMongooseAPI, options);
 ```
 
