@@ -101,6 +101,7 @@ class APIRouter {
 		let limit = request.query.limit ? parseInt(request.query.limit, 10) : 100;
 		let sort = request.query.sort ? request.query.sort : null;
 		let filter = request.query.filter ? request.query.filter : null;
+		let where = request.query.where ? request.query.where : null;
 		let search = request.query.search ? request.query.search : null;
 		let match = request.query.match ? request.query.match : null;
 		let fields = request.query.fields ? request.query.fields : null;
@@ -120,6 +121,27 @@ class APIRouter {
 			}
 
 			query.where(splet[0]).equals(splet[1]);
+		}
+
+		if (where) {
+
+			const allowedMethods = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'];
+			const sanitize = function(v) {
+				if (v instanceof Object) {
+					for (var key in v) {
+						if (/^\$/.test(key) && allowedMethods.indexOf(key) === -1) {
+							delete v[key];
+						} else {
+							sanitize(v[key]);
+						}
+					}
+				}
+				return v;
+			};
+
+			const whereAsObject = sanitize(JSON.parse(where));
+
+			query.and(whereAsObject);
 		}
 
 		if (match) {

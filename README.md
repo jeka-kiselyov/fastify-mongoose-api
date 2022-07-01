@@ -28,7 +28,7 @@ await fastify.listen(8080); /// running the server
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
 - [POST/PUT on frontend samples](#postput-sample-on-frontend)
 - [LIST methods response](#list-method-response-sample)
-- [LIST methods options (pagination, projection, sorting, filtering, regext match, populate)](#list-method-options)
+- [LIST methods options (pagination, projection, sorting, filtering, complex where, search, regex match, populate)](#list-method-options)
 - [Handle extra LIST cases, custom filtering etc](#handle-extra-cases)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
@@ -234,6 +234,25 @@ await axios.get('/api/books', {params: {filter: 'isGood=0'}});
 
 See [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/boolean_fields.test.js)
 
+### Complex Where Queries
+
+Pass mongo where object as `where` property JSON-encoded string and it will be added to list filters.
+`where: "{\"count\": 2}"` or `JSON.stringify({$and: [{appleCount: {$gt: 1}}, {bananaCount: {$lt: 5}}]})`
+
+Plugin uses simple sanitation, list of allowed operators:
+```javascript
+  '$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'
+```
+
+See [Mongo operators docs](https://www.mongodb.com/docs/manual/reference/operator/query/#query-and-projection-operators)
+And plugin [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/complex_where.test.js)
+for more info.
+
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Where   | where       | null          |
+
 ### Regex match
 
 Use it for pattern matching. Useful for things like autocomplete etc. [Check mongodb docs](https://docs.mongodb.com/manual/reference/operator/query/regex/#pcre-vs-javascript) how to pass regex options in pattern string, e.g. `(?i)pattern` to turn case-insensitivity on. Pass param in the same way as for filtering, `/api/authors?match=lastName%3D(?i)vonnegut`
@@ -309,6 +328,51 @@ and get a response of:
 ```
 
 works very same, you can also pass `populate[]` array to populate few fields.
+
+## Disable some routes/methods
+
+Plugin decorates every model with default methods for Post, Put and Delete, [apiPost](), [apiPut]() and [apiDelete]().
+
+```
+Post    - [apiPost](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)    - schema.statics.apiPost = async(data, request)
+Put     - [apiPut](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)     - schema.methods.apiPut = async(data, request)
+Delete  - [apiDelete](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)  - schema.methods.apiDelete = async(request)
+```
+
+But you can define your own methods on any model, so the simple one of:
+
+```javascript
+  schema.methods.apiPut = async function(data, request) {
+    // disable the Put completely
+    throw new Error('PUT is disabled for this route');
+  };
+```
+
+would disable the PUT method for model's API route, returing status of 500 with error message.
+
+You can also define any custom logic based on request's object (auth, user access levels etc) or data itself (disabling some fields upading etc):
+
+```javascript
+  schema.statics.apiPost = async function(data, request) {
+    if (!request.headers['letmepostplease']) {
+      throw new Error('POST is disabled for you!');
+    }
+
+    let doc = new mongooseConnection.models.WhereTest;
+
+    mongooseConnection.models.WhereTest.schema.eachPath((pathname) => {
+      if (data[pathname] !== undefined) {
+        doc[pathname] = data[pathname];
+      }
+    });
+
+    await doc.save();
+    return doc;
+  };
+```
+
+Check out the [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/disable_route.test.js) to see how it works in action.
+
 
 ## Subroutes when there're few refs to the same model
 
