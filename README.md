@@ -331,12 +331,12 @@ works very same, you can also pass `populate[]` array to populate few fields.
 
 ## Disable some routes/methods
 
-Plugin decorates every model with default methods for Post, Put and Delete, [apiPost](), [apiPut]() and [apiDelete]().
+Plugin decorates every model with default methods for Post, Put and Delete, [apiPost](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js#L91), [apiPut](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js#L170) and [apiDelete](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js#L187).
 
 ```
-Post    - [apiPost](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)    - schema.statics.apiPost = async(data, request)
-Put     - [apiPut](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)     - schema.methods.apiPut = async(data, request)
-Delete  - [apiDelete](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js)  - schema.methods.apiDelete = async(request)
+Post   - schema.statics.apiPost = async(data, request)
+Put    - schema.methods.apiPut = async(data, request)
+Delete - schema.methods.apiDelete = async(request)
 ```
 
 But you can define your own methods on any model, so the simple one of:
@@ -346,9 +346,13 @@ But you can define your own methods on any model, so the simple one of:
     // disable the Put completely
     throw new Error('PUT is disabled for this route');
   };
+  schema.methods.apiDelete = async function(request) {
+    // disable the Put completely
+    throw new Error('DELETE is disabled for this route');
+  };
 ```
 
-would disable the PUT method for model's API route, returing status of 500 with error message.
+would disable the PUT and DELETE methods for model's API route, returing status of 500 with error message.
 
 You can also define any custom logic based on request's object (auth, user access levels etc) or data itself (disabling some fields upading etc):
 
