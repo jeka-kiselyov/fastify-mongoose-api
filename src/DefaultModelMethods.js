@@ -119,12 +119,29 @@ class DefaultModelMethods {
 		let deepObjectsPromisesArray = [];
 		const deepObjectsPromisesResults = {};
 
+		let versionKey = true;
+		if (this.__api && this.__api._exposeVersionKey === false) {
+			versionKey = false;
+		}
+
+		let modelNameField = null;
+		if (this.__api && this.__api._exposeModelName) {
+			if (typeof (this.__api._exposeModelName) == 'string') {
+				modelNameField = this.__api._exposeModelName;
+			} else {
+				modelNameField = '__modelName';
+			}
+		}
+
 		// 2 steps
 		// 1 - run regular toObject processing and check if there're deeper documents we may need to transform
 		// 2 - run toObject processing updaing deeper objects with their .apiValues() results
 
 		const transform = (doc, ret)=>{
 			if (doc === this) {
+				if (modelNameField) {
+					ret[modelNameField] = doc.constructor.modelName;
+				}
 				return ret;
 			} else {
 				areThereDeepObjects = true;
@@ -132,16 +149,22 @@ class DefaultModelMethods {
 				const deeperApiValues = doc.apiValues();
 				if (typeof deeperApiValues?.then === 'function') {
 					deepObjectsPromisesArray.push(deeperApiValues.then((res)=>{
+							if (modelNameField) {
+								res[modelNameField] = doc.constructor.modelName;
+							}
 							deepObjectsPromisesResults[doc.id] = res;
 						}));
 				} else {
+					if (modelNameField) {
+						deeperApiValues[modelNameField] = doc.constructor.modelName;
+					}
 					deepObjectsPromisesResults[doc.id] = deeperApiValues;
 				}
 				return null; // to be covered later
 			}
 		};
 
-		const firstResult = this.toObject({transform: transform});
+		const firstResult = this.toObject({transform: transform, versionKey: versionKey});
 
 		if (!areThereDeepObjects) {
 			// return data after 1st step if there's nothing deeper
@@ -153,13 +176,16 @@ class DefaultModelMethods {
 
 		const transformDeeper = (doc, ret)=>{
 			if (doc === this) {
+				if (modelNameField) {
+					ret[modelNameField] = doc.constructor.modelName;
+				}
 				return ret;
 			} else {
 				return deepObjectsPromisesResults[doc.id];
 			}
 		};
 
-		return this.toObject({transform: transformDeeper});
+		return this.toObject({transform: transformDeeper, versionKey: versionKey});
 	}
 
 	/**

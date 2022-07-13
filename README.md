@@ -76,6 +76,31 @@ Path prefix. Default is `/api/`.
 
 Initialize api with default REST methods
 
+#### .exposeVersionKey : boolean (default: true)
+
+Show documents `__v` in API response
+
+#### .exposeModelName : boolean | string (default: false)
+
+Show mongoose Model Name property in API response. Default property name is `.__modelName` , specify exposeModelName as string to name this field as custom.
+
+If `true` it adds `__modelName` to all responses (get, list, post/put, populated too):
+
+```javascript
+
+{ total: 1,
+  items:
+   [ { _id: '5d2620aff4df8b3c4f4f03d6',
+       created: '2019-07-10T17:30:23.486Z',
+       firstName: 'Jay',
+       lastName: 'Kay',
+       biography: 'Lived. Died.',
+       __modelName: 'Author'
+       __v: 0 },
+    ]
+}
+```
+
 #### .methods : array of strings
 
 Methods to initialize, `['list', 'get', 'post', 'patch', 'put', 'delete', 'options']` is available.
