@@ -83,12 +83,10 @@ class APIRouter {
 				if (Array.isArray(data)) {
 					ret = {};
 
-					const promises = data.map(this.docToAPIResponse);
-					ret.items = await Promise.all(promises);
-
+					ret.items = await this.arrayOfDocsToAPIResponse(data, request);
 					ret.total = ret.items.length;
 				} else {
-					ret = await this.docToAPIResponse(data);
+					ret = await this.docToAPIResponse(data, request);
 				}
 			}
 
@@ -186,9 +184,7 @@ class APIRouter {
 		}
 
 		let docs = await query.find().exec();
-
-		const promises = docs.map(this.docToAPIResponse);
-		ret.items = await Promise.all(promises);
+		ret.items = await this.arrayOfDocsToAPIResponse(docs, request);
 
 		return ret;
 	}
@@ -225,7 +221,7 @@ class APIRouter {
 		let doc = await this._model.apiPost(request.body, request);
 		await this.populateIfNeeded(request, doc);
 
-		reply.send(await this.docToAPIResponse(doc));
+		reply.send(await this.docToAPIResponse(doc, request));
 	}
 
 	async routeGet(request, reply) {
@@ -242,7 +238,7 @@ class APIRouter {
 			reply.callNotFound();
 		} else {
 			await this.populateIfNeeded(request, doc);
-			let ret = await this.docToAPIResponse(doc);
+			let ret = await this.docToAPIResponse(doc, request);
 			reply.send(ret);
 		}
 	}
@@ -262,7 +258,7 @@ class APIRouter {
 		} else {
 			await doc.apiPut(request.body, request);
 			await this.populateIfNeeded(request, doc);
-			let ret = await this.docToAPIResponse(doc);
+			let ret = await this.docToAPIResponse(doc, request);
 			reply.send(ret);
 		}
 	}
@@ -284,8 +280,14 @@ class APIRouter {
 		}
 	}
 
-	async docToAPIResponse(doc) {
-		return doc ? ( doc.apiValues ? doc.apiValues() : doc ) : null;
+	async arrayOfDocsToAPIResponse(docs, request) {
+		const fn = (doc) => this.docToAPIResponse(doc,request);
+		const promises = docs.map(fn);
+		return await Promise.all(promises);
+	}
+
+	async docToAPIResponse(doc, request) {
+		return doc ? ( doc.apiValues ? doc.apiValues(request) : doc ) : null;
 	}
 }
 

@@ -106,7 +106,7 @@ class DefaultModelMethods {
 	 * [apiValues description]
 	 * @return {[type]} [description]
 	 */
-	async apiValues() {
+	async apiValues(request) {
 		// complex logic below is to be sure deeper populated object are covered by their .apiValues()
 		// method.
 		// If you don't need this, just use simple:
@@ -146,7 +146,7 @@ class DefaultModelMethods {
 			} else {
 				areThereDeepObjects = true;
 
-				const deeperApiValues = doc.apiValues();
+				const deeperApiValues = doc.apiValues(request);
 				if (typeof deeperApiValues?.then === 'function') {
 					deepObjectsPromisesArray.push(deeperApiValues.then((res)=>{
 							if (modelNameField) {

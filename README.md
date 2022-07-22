@@ -438,7 +438,7 @@ while keeping expected internal refs GET routes of `/api/books/BOOKID/author` an
 
 ## How to hide specific fields/properties in API response
 
-fastify-mongoose-api adds [.apiValues()](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js) method to every mongoose model without it. You can define your own:
+fastify-mongoose-api adds [.apiValues(request)](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js) method to every mongoose model without it. You can define your own:
 
 ```javascript
   const bookSchema = mongoose.Schema({
@@ -452,7 +452,7 @@ fastify-mongoose-api adds [.apiValues()](https://github.com/jeka-kiselyov/fastif
   });
 
   // we defined apiValues response change to check if it works for refs response
-  bookSchema.methods.apiValues = function() {
+  bookSchema.methods.apiValues = function(request) {
     const object = this.toObject({depopulate: true});
     object.isbn = 'hidden';
     delete object.password;
@@ -462,6 +462,39 @@ fastify-mongoose-api adds [.apiValues()](https://github.com/jeka-kiselyov/fastif
 ```
 
 so it will always display `isbn` value as `hidden` in API response and never show anything for `password` field.
+
+As `request` is present, you can return different properties depending on request or your application state. Simpliest is:
+
+```javascript
+
+  schema.methods.apiValues = function (request) {
+    if (!request.headers['givememoredataplease']) {
+      return {
+        name: this.name,
+      };
+    }
+
+    return this.toObject();
+  };
+
+```
+
+will return the full object only if `givememoredataplease` HTTP header is present in the request. You can add some access level checking on your signed in
+user for more advanced flows:
+
+```javascript
+
+  schema.methods.apiValues = function (request) {
+    if (!request.user.hasRightsToViewMoreFields()) {
+      return {
+        name: this.name,
+      };
+    }
+    return this.toObject();
+  };
+
+```
+
 
 ## CORS
 

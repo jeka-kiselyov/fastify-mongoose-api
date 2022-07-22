@@ -18,6 +18,7 @@ const BackwardWrapper = require('./BackwardWrapper.js');
 
 let mongooseConnection = null;
 let fastify = null;
+let response = null;
 
 
 test('mongoose db initialization', async t => {
@@ -33,7 +34,28 @@ test('schema initialization', async t => {
 		name: String,
 		appleCount: Number,
 		bananaCount: Number,
+		fieldAvailableIfYouAskGood: {type: Number, default: 999},
 	});
+
+	schema.methods.apiValues = function (request) {
+		if (!request.headers['givememoredataplease']) {
+			return {
+				name: this.name,
+				appleCount: this.appleCount,
+				bananaCount: this.bananaCount,
+			};
+		}
+
+		// or return this.toObject();
+		//
+
+		return {
+			name: this.name,
+			appleCount: this.appleCount,
+			bananaCount: this.bananaCount,
+			fieldAvailableIfYouAskGood: this.fieldAvailableIfYouAskGood,
+		};
+	};
 
 	schema.methods.apiPut = async function(data, request) {
 		// disable the Put completely
@@ -41,6 +63,11 @@ test('schema initialization', async t => {
 	};
 
 	schema.statics.apiPost = async function(data, request) {
+		// lets POST only with specific header
+		// possible option is to check user rights here
+		// if (!request.user.hasRightToPost()) {
+		// 	throw new Error('Lol, you cant');
+		// }
 		if (!request.headers['letmepostplease']) {
 			throw new Error('POST is disabled for you!');
 		}
@@ -106,8 +133,21 @@ test('Disabled POST item test', async t => {
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
 	t.match(response.body, {name: 'Bob', appleCount: 1, bananaCount: 2}, "POST with header ok");
+	t.has(response.body, {fieldAvailableIfYouAskGood: undefined}, 'does not have fieldAvailableIfYouAskGood field by default');
 });
 
+test('Has Extra field in response by apiValues', async t => {
+	response = await supertest(fastify.server)
+		.post('/api/wheretests')
+		.set('letmepostplease', 'pleaaaaase')
+		.set('givememoredataplease', 'pleaaaaase')
+		.send({name: 'Bob', appleCount: 1, bananaCount: 2})
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.match(response.body, {name: 'Bob', appleCount: 1, bananaCount: 2}, "POST with header ok");
+	t.ok(response.body.fieldAvailableIfYouAskGood !== undefined, 'fieldAvailableIfYouAskGood is present');
+});
 
 test('Disabled PUT test', async t => {
 	let itemFromDb = await mongooseConnection.models.WhereTest.findOne({});
