@@ -123,12 +123,12 @@ class APIRouter {
 
 		if (where) {
 
-			const allowedMethods = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'];
+			const allowedMethods = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists', '$regex', '$options'];
 			const sanitize = function(v) {
 				if (v instanceof Object) {
 					for (var key in v) {
 						if (/^\$/.test(key) && allowedMethods.indexOf(key) === -1) {
-							delete v[key];
+							throw new Error('Invalid method: ' + key)
 						} else {
 							sanitize(v[key]);
 						}
