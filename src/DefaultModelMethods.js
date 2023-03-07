@@ -94,7 +94,16 @@ class DefaultModelMethods {
 
 		this.schema.eachPath((pathname) => {
 			if (data[pathname] !== undefined) {
-				doc[pathname] = data[pathname];
+				if (pathname.includes('.')) {
+					// nested document
+					const keys = pathname.split('.');
+					const lastKey = keys.pop();
+					const lastObj = keys.reduce((doc, key) =>
+						doc[key] = doc[key] || {}, doc)
+					lastObj[lastKey] = data[pathname];
+				} else {
+					doc[pathname] = data[pathname];
+				}
 			}
 		});
 
@@ -196,10 +205,27 @@ class DefaultModelMethods {
 	async apiPut(data) {
 		//// this points to document (schema.methods.)
 		this.schema.eachPath((pathname) => {
+			let newValue = undefined;
+			let isChanged = false;
 			if (data[pathname] !== undefined) {
-				this[pathname] = data[pathname];
+				newValue = data[pathname];
+				isChanged = true;
 			} else if (data[pathname] === null) {
-				this[pathname] = undefined;
+				newValue = undefined;
+				isChanged = true;
+			}
+			if (isChanged) {
+				if (pathname.includes('.')) {
+					let doc = this;
+					// nested document
+					const keys = pathname.split('.');
+					const lastKey = keys.pop();
+					const lastObj = keys.reduce((doc, key ) =>
+						doc[key] = doc[key] || {},	doc)
+					lastObj[lastKey] = newValue;
+				} else {
+					this[pathname] = newValue;
+				}
 			}
 		});
 
