@@ -13,6 +13,13 @@ class API {
 		this._checkAuth = params.checkAuth || null;
 		this._defaultModelMethods = params.defaultModelMethods || DefaultModelMethods;
 
+		this._exposeVersionKey = params.exposeVersionKey; // default = true
+		if (this._exposeVersionKey === undefined) {
+			this._exposeVersionKey = true;
+		}
+
+		this._exposeModelName = params.exposeModelName || false; // default = false
+
 		this._apiRouters = {};
 
 		for (let key of Object.keys(this._models)) {
@@ -51,6 +58,8 @@ class API {
 					prefix: prefix,
 					fastify: this._fastify
 				});
+
+				model.prototype.__api = this;
 			}
 		}
 

@@ -13,6 +13,8 @@ const fastifyFormbody = require('fastify-formbody');
 const FASTIFY_PORT = 3137;
 const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
 
+const BackwardWrapper = require('./BackwardWrapper.js');
+
 let mongooseConnection = null;
 let fastify = null;
 
@@ -20,7 +22,7 @@ let fastify = null;
 test('mongoose db initialization', async t => {
 	t.plan(2);
 
-	mongooseConnection = await mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true });
+	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
     t.ok(mongooseConnection);
     t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });

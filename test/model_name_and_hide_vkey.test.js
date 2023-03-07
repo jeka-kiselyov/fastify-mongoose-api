@@ -15,7 +15,6 @@ const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymong
 
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-
 let mongooseConnection = null;
 let fastify = null;
 
@@ -23,8 +22,8 @@ test('mongoose db initialization', async t => {
 	t.plan(2);
 
 	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+	t.ok(mongooseConnection);
+	t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
 
 test('schema initialization', async t => {
@@ -47,9 +46,9 @@ test('schema initialization', async t => {
 		title: String,
 		isbn: String,
 		author: {
-	        type: mongoose.Schema.Types.ObjectId,
-	        ref: 'Author'
-	    },
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Author'
+		},
 		created: {
 			type: Date,
 			default: Date.now
@@ -83,18 +82,16 @@ test('schema ok', async t => {
 
 	await book.save();
 
-	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'});
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
+	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'}).exec();
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'}).exec();
 
 	t.ok(authorFromDb);
 	t.ok(bookFromDb);
 
 	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
 
 	t.equal(''+bookFromDb.author._id, ''+authorFromDb._id);
 });
-
 
 
 test('initialization of API server', async t => {
@@ -106,7 +103,9 @@ test('initialization of API server', async t => {
 
 	fastify.register(fastifyMongooseAPI, {
 			models: mongooseConnection.models,
-			prefix: '/someroute/',
+			exposeVersionKey: false,
+			exposeModelName: true,
+			prefix: '/api/',
 			setDefaults: true,
 			methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
 		});
@@ -119,8 +118,8 @@ test('initialization of API server', async t => {
 	t.equal(fastify.mongooseAPI.apiRouters.Author.collectionName, 'authors', 'Collection name used in API path');
 	t.equal(fastify.mongooseAPI.apiRouters.Book.collectionName, 'books', 'Collection name used in API path');
 
-	t.equal(fastify.mongooseAPI.apiRouters.Author.path, '/someroute/authors', 'API path is composed with prefix + collectionName');
-	t.equal(fastify.mongooseAPI.apiRouters.Book.path, '/someroute/books', 'API path is composed with prefix + collectionName');
+	t.equal(fastify.mongooseAPI.apiRouters.Author.path, '/api/authors', 'API path is composed with prefix + collectionName');
+	t.equal(fastify.mongooseAPI.apiRouters.Book.path, '/api/books', 'API path is composed with prefix + collectionName');
 
 	await fastify.listen(FASTIFY_PORT);
 });
@@ -129,18 +128,45 @@ test('initialization of API server', async t => {
 test('GET collection endpoints', async t => {
 	let response = null;
 	response = await supertest(fastify.server)
-		.get('/someroute/books')
+		.get('/api/books')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
 	t.equal(response.body.total, 1, 'API returns 1 book');
+	t.equal(response.body.items[0].__modelName, 'Book', 'Model name is present in response');
+
+	t.has(response.body.items[0], {__v: undefined}, 'does not have version field');
 
 	response = await supertest(fastify.server)
-		.get('/someroute/authors')
+		.get('/api/authors')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
 	t.equal(response.body.total, 1, 'API returns 1 author');
+	t.equal(response.body.items.length, 1, 'API returns 1 author');
+	t.equal(response.body.items[0].__modelName, 'Author', 'Model name is present in response');
+
+	t.has(response.body.items[0], {__v: undefined}, 'does not have version field');
+});
+
+test('ModelName on populated', async t => {
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
+	// await bookFromDb.populate('author').execPopulate();
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+
+	let response = null;
+	response = await supertest(fastify.server)
+		.get('/api/books/'+bookFromDb.id+'?populate=author')
+		.expect(200)
+		.expect('Content-Type', 'application/json; charset=utf-8')
+
+	t.match(response.body, {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Book is ok");
+	t.equal(response.body.__modelName, 'Book', 'Model name is present in response');
+	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
+	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
+	t.equal(response.body.author.__modelName, 'Author', 'Model name is present in response on populated objects');
+
+	t.has(response.body.author, {__v: undefined}, 'populated does not have version field');
 });
 
 test('teardown', async t=>{

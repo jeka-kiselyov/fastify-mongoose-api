@@ -83,12 +83,10 @@ class APIRouter {
 				if (Array.isArray(data)) {
 					ret = {};
 
-					const promises = data.map(this.docToAPIResponse);
-					ret.items = await Promise.all(promises);
-
+					ret.items = await this.arrayOfDocsToAPIResponse(data, request);
 					ret.total = ret.items.length;
 				} else {
-					ret = await this.docToAPIResponse(data);
+					ret = await this.docToAPIResponse(data, request);
 				}
 			}
 
@@ -101,6 +99,7 @@ class APIRouter {
 		let limit = request.query.limit ? parseInt(request.query.limit, 10) : 100;
 		let sort = request.query.sort ? request.query.sort : null;
 		let filter = request.query.filter ? request.query.filter : null;
+		let where = request.query.where ? request.query.where : null;
 		let search = request.query.search ? request.query.search : null;
 		let match = request.query.match ? request.query.match : null;
 		let fields = request.query.fields ? request.query.fields : null;
@@ -122,6 +121,27 @@ class APIRouter {
 			query.where(splet[0]).equals(splet[1]);
 		}
 
+		if (where) {
+
+			const allowedMethods = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'];
+			const sanitize = function(v) {
+				if (v instanceof Object) {
+					for (var key in v) {
+						if (/^\$/.test(key) && allowedMethods.indexOf(key) === -1) {
+							delete v[key];
+						} else {
+							sanitize(v[key]);
+						}
+					}
+				}
+				return v;
+			};
+
+			const whereAsObject = sanitize(JSON.parse(where));
+
+			query.and(whereAsObject);
+		}
+
 		if (match) {
 			let splet = (''+match).split('=');
 			if (splet.length == 2) {
@@ -131,7 +151,16 @@ class APIRouter {
 			}
 		}
 
-		ret.total = await query.countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
+		if (this._model.onListQuery) {
+			await this._model.onListQuery(query, request);
+		}
+
+		if (query.clone) {
+			// mongoose > 6.0
+			ret.total = await query.clone().countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
+		} else {
+			ret.total = await query.countDocuments(); /// @todo Use estimatedDocumentCount() if there're no filters?
+		}
 
 		query.limit(limit);
 		query.skip(offset);
@@ -155,9 +184,7 @@ class APIRouter {
 		}
 
 		let docs = await query.find().exec();
-
-		const promises = docs.map(this.docToAPIResponse);
-		ret.items = await Promise.all(promises);
+		ret.items = await this.arrayOfDocsToAPIResponse(docs, request);
 
 		return ret;
 	}
@@ -170,22 +197,31 @@ class APIRouter {
 	async populateIfNeeded(request, doc) {
 		let populate = request.query['populate[]'] ? request.query['populate[]'] : (request.query.populate ? request.query.populate : null);
 		if (populate) {
+			let populated = null;
 			if (Array.isArray(populate)) {
-				for (let pop of populate) {
-					doc.populate(pop);
-				}
+				populated = doc.populate(populate);
+				// for (let pop of populate) {
+				// 	doc.populate(pop);
+				// }
 			} else {
-				doc.populate(populate);
+				populated = doc.populate(populate);
 			}
-			await doc.execPopulate();
+
+			if (populated.execPopulate) {
+				await populated.execPopulate();
+			} else {
+				await populated;
+			}
+
+			// await doc.execPopulate();
 		}
 	}
 
 	async routePost(request, reply) {
-		let doc = await this._model.apiPost(request.body);
+		let doc = await this._model.apiPost(request.body, request);
 		await this.populateIfNeeded(request, doc);
 
-		reply.send(await this.docToAPIResponse(doc));
+		reply.send(await this.docToAPIResponse(doc, request));
 	}
 
 	async routeGet(request, reply) {
@@ -202,7 +238,7 @@ class APIRouter {
 			reply.callNotFound();
 		} else {
 			await this.populateIfNeeded(request, doc);
-			let ret = await this.docToAPIResponse(doc);
+			let ret = await this.docToAPIResponse(doc, request);
 			reply.send(ret);
 		}
 	}
@@ -220,9 +256,9 @@ class APIRouter {
 		if (!doc) {
 			reply.callNotFound();
 		} else {
-			await doc.apiPut(request.body);
+			await doc.apiPut(request.body, request);
 			await this.populateIfNeeded(request, doc);
-			let ret = await this.docToAPIResponse(doc);
+			let ret = await this.docToAPIResponse(doc, request);
 			reply.send(ret);
 		}
 	}
@@ -239,13 +275,19 @@ class APIRouter {
 		if (!doc) {
 			reply.callNotFound();
 		} else {
-			await doc.apiDelete();
+			await doc.apiDelete(request);
 			reply.send({success: true});
 		}
 	}
 
-	async docToAPIResponse(doc) {
-		return doc ? ( doc.apiValues ? doc.apiValues() : doc ) : null;
+	async arrayOfDocsToAPIResponse(docs, request) {
+		const fn = (doc) => this.docToAPIResponse(doc,request);
+		const promises = docs.map(fn);
+		return await Promise.all(promises);
+	}
+
+	async docToAPIResponse(doc, request) {
+		return doc ? ( doc.apiValues ? doc.apiValues(request) : doc ) : null;
 	}
 }
 

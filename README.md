@@ -10,7 +10,7 @@ If you are using [Fastify](https://github.com/fastify/fastify) as your server an
 ### As simple as:
 ```javascript
 const fastify = Fastify();
-fastify.register(fastifyFormbody); /// need form body to accept API parameters
+fastify.register(fastifyFormbody); /// need form body to accept API parameters, both fastify-formbody and @fastify/formbody would work here
 fastify.register(fastifyMongooseAPI, {  /// here we are registering our plugin
     models: mongooseConnection.models,  /// Mongoose connection models
     prefix: '/api/',                    /// URL prefix. e.g. http://localhost/api/...
@@ -26,10 +26,14 @@ await fastify.listen(8080); /// running the server
 - [Initialization and parameters](#initialization)
 - Sample application ([Source code](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app), [Live demo](https://fastify-mongoose-api-app.herokuapp.com/))
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
+- [POST/PUT on frontend samples](#postput-sample-on-frontend)
 - [LIST methods response](#list-method-response-sample)
-- [LIST methods options (pagination, projection, sorting, filtering, regext match, populate)](#list-method-options)
+- [LIST methods options (pagination, projection, sorting, filtering, complex where, search, regex match, populate)](#list-method-options)
+- [Handle extra LIST cases, custom filtering etc](#handle-extra-cases)
+- [Disable/Limit some routes/methods](#disable-some-routesmethods)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
+- [How to hide document properties/fields in API response?](#how-to-hide-specific-fieldsproperties-in-api-response)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [How to implement authorization?](#checkauth--function)
 - [Unit tests](#tests)
@@ -46,7 +50,7 @@ Register plugin on fastify instance:
 
 ```javascript
 const fastify = Fastify();
-fastify.register(fastifyFormbody);
+fastify.register(fastifyFormbody); // both fastify-formbody and @fastify/formbody would work
 fastify.register(fastifyMongooseAPI, options);
 ```
 
@@ -71,6 +75,31 @@ Path prefix. Default is `/api/`.
 #### .setDefaults : boolean (default: true)
 
 Initialize api with default REST methods
+
+#### .exposeVersionKey : boolean (default: true)
+
+Show documents `__v` in API response
+
+#### .exposeModelName : boolean | string (default: false)
+
+Show mongoose Model Name property in API response. Default property name is `.__modelName` , specify exposeModelName as string to name this field as custom.
+
+If `true` it adds `__modelName` to all responses (get, list, post/put, populated too):
+
+```javascript
+
+{ total: 1,
+  items:
+   [ { _id: '5d2620aff4df8b3c4f4f03d6',
+       created: '2019-07-10T17:30:23.486Z',
+       firstName: 'Jay',
+       lastName: 'Kay',
+       biography: 'Lived. Died.',
+       __modelName: 'Author'
+       __v: 0 },
+    ]
+}
+```
 
 #### .methods : array of strings
 
@@ -150,15 +179,24 @@ await fastify.listen(8080);
 | ------------- | ------------- | ----- | ----- |
 | List all authors | GET | /api/authors | Pagination, sorting, search and filtering [are ready](#list-method-options) |
 | List all books | GET | /api/books | Want to get populated refs in response? [You can](#populate) |
-| Create new author | POST | /api/authors | Send properties using FormData [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
+| Create new author | POST | /api/authors | Send properties with post body [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
 | Create new book | POST | /api/books |  |
 | Get single author | GET | /api/authors/AUTHORID | |
 | Get author books | GET | /api/authors/AUTHORID/books | Plugin builds relations based on models definition |
 | Get book author | GET | /api/books/BOOKID/author | Same in reverse way |
-| Update author | PUT | /api/authors/AUTHORID | Send properties using FormData |
+| Update author | PUT | /api/authors/AUTHORID | Send properties using post body |
 | Update book | PUT | /api/books/BOOKID |   |
 | Delete book | DELETE | /api/books/BOOKID | Be careful |
 | Delete author | DELETE | /api/authors/AUTHORID |   |
+
+## Post/Put sample on frontend
+
+```javascript
+await axios.post('/api/books', {title: 'The Book'});
+await axios.put('/api/books/xxxxx', {title: 'The Book Updated'});
+await axios.put('/api/books/xxxxx', {title: 'The Book Updated'}, {params: {populate: 'author'}});
+
+```
 
 ## List method response sample
 
@@ -208,6 +246,38 @@ Simple filtering by field value is available. /api/books?filter=isbn%3Dsomeisbnv
 | ------- | ----------- | ------------- |
 | Filter  | filter      | null          |
 
+#### Filtering by Boolean property
+
+Though you pass property value directly as boolean to create new entity or update one:
+```javascript
+await axios.post('/api/books', {title: 'Some Book', isGood: false});
+```
+
+Filtering by that value may be implemented using number representation of boolean (0/1):
+```javascript
+await axios.get('/api/books', {params: {filter: 'isGood=0'}});
+```
+
+See [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/boolean_fields.test.js)
+
+### Complex Where Queries
+
+Pass mongo where object as `where` property JSON-encoded string and it will be added to list filters.
+`where: "{\"count\": 2}"` or `JSON.stringify({$and: [{appleCount: {$gt: 1}}, {bananaCount: {$lt: 5}}]})`
+
+Plugin uses simple sanitation, list of allowed operators:
+```javascript
+  '$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'
+```
+
+See [Mongo operators docs](https://www.mongodb.com/docs/manual/reference/operator/query/#query-and-projection-operators)
+And plugin [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/complex_where.test.js)
+for more info.
+
+
+|         | Option Name | Default Value |
+| ------- | ----------- | ------------- |
+| Where   | where       | null          |
 
 ### Regex match
 
@@ -241,6 +311,21 @@ If you want API response to include nested objects, just pass populate string in
 | ------- | ----------- | ------------- |
 | Populate| populate    | null          |
 
+### Handle extra cases
+
+You can create hook method on any model to handle its List requests.
+
+```javascript
+  schema.statics.onListQuery = async function(query, request) {
+      let notSeen = request.query.notSeen ? request.query.notSeen : null;
+      if (notSeen) {
+          query = query.and({sawBy: {$ne: request.user._id}});
+      }
+  }
+```
+query is Mongoose query object, so you can extend it by any [query object's methods](https://mongoosejs.com/docs/api.html#Query) depending on your state or request data.
+
+Note: **do not** return anything in this method.
 
 ## Populate on POST, PUT and single item GET methods
 
@@ -269,6 +354,55 @@ and get a response of:
 ```
 
 works very same, you can also pass `populate[]` array to populate few fields.
+
+## Disable some routes/methods
+
+Plugin decorates every model with default methods for Post, Put and Delete, [apiPost](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js#L91), [apiPut](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js#L170) and [apiDelete](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js#L187).
+
+```
+Post   - schema.statics.apiPost = async(data, request)
+Put    - schema.methods.apiPut = async(data, request)
+Delete - schema.methods.apiDelete = async(request)
+```
+
+But you can define your own methods on any model, so the simple one of:
+
+```javascript
+  schema.methods.apiPut = async function(data, request) {
+    // disable the Put completely
+    throw new Error('PUT is disabled for this route');
+  };
+  schema.methods.apiDelete = async function(request) {
+    // disable the Put completely
+    throw new Error('DELETE is disabled for this route');
+  };
+```
+
+would disable the PUT and DELETE methods for model's API route, returing status of 500 with error message.
+
+You can also define any custom logic based on request's object (auth, user access levels etc) or data itself (disabling some fields upading etc):
+
+```javascript
+  schema.statics.apiPost = async function(data, request) {
+    if (!request.headers['letmepostplease']) {
+      throw new Error('POST is disabled for you!');
+    }
+
+    let doc = new mongooseConnection.models.WhereTest;
+
+    mongooseConnection.models.WhereTest.schema.eachPath((pathname) => {
+      if (data[pathname] !== undefined) {
+        doc[pathname] = data[pathname];
+      }
+    });
+
+    await doc.save();
+    return doc;
+  };
+```
+
+Check out the [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/disable_route.test.js) to see how it works in action.
+
 
 ## Subroutes when there're few refs to the same model
 
@@ -302,6 +436,66 @@ and
 
 while keeping expected internal refs GET routes of `/api/books/BOOKID/author` and `/api/books/BOOKID/coauthor`
 
+## How to hide specific fields/properties in API response
+
+fastify-mongoose-api adds [.apiValues(request)](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/src/DefaultModelMethods.js) method to every mongoose model without it. You can define your own:
+
+```javascript
+  const bookSchema = mongoose.Schema({
+    title: String,
+    isbn: String,
+    created: {
+      type: Date,
+      default: Date.now
+    },
+    password: String,
+  });
+
+  // we defined apiValues response change to check if it works for refs response
+  bookSchema.methods.apiValues = function(request) {
+    const object = this.toObject({depopulate: true});
+    object.isbn = 'hidden';
+    delete object.password;
+
+    return object;
+  };
+```
+
+so it will always display `isbn` value as `hidden` in API response and never show anything for `password` field.
+
+As `request` is present, you can return different properties depending on request or your application state. Simpliest is:
+
+```javascript
+
+  schema.methods.apiValues = function (request) {
+    if (!request.headers['givememoredataplease']) {
+      return {
+        name: this.name,
+      };
+    }
+
+    return this.toObject();
+  };
+
+```
+
+will return the full object only if `givememoredataplease` HTTP header is present in the request. You can add some access level checking on your signed in
+user for more advanced flows:
+
+```javascript
+
+  schema.methods.apiValues = function (request) {
+    if (!request.user.hasRightsToViewMoreFields()) {
+      return {
+        name: this.name,
+      };
+    }
+    return this.toObject();
+  };
+
+```
+
+
 ## CORS
 
 How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/fastify/fastify-cors) works just fine:
@@ -323,6 +517,7 @@ How to enable CORS for cross-domain requests? [fastify-cors](https://github.com/
   await fastify.ready();
   await fastify.listen(args.port);
 ```
+
 
 ## Tests
 

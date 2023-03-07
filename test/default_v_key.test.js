@@ -18,14 +18,12 @@ const BackwardWrapper = require('./BackwardWrapper.js');
 let mongooseConnection = null;
 let fastify = null;
 
-let isAuthedTestBoolean = false;
-
 test('mongoose db initialization', async t => {
 	t.plan(2);
 
 	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+	t.ok(mongooseConnection);
+	t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
 
 test('schema initialization', async t => {
@@ -48,9 +46,9 @@ test('schema initialization', async t => {
 		title: String,
 		isbn: String,
 		author: {
-	        type: mongoose.Schema.Types.ObjectId,
-	        ref: 'Author'
-	    },
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Author'
+		},
 		created: {
 			type: Date,
 			default: Date.now
@@ -69,6 +67,33 @@ test('clean up test collections', async t => {
 	await mongooseConnection.models.Book.deleteMany({}).exec();
 });
 
+test('schema ok', async t => {
+	let author = new mongooseConnection.models.Author;
+	author.firstName = 'Jay';
+	author.lastName = 'Kay';
+	author.biography = 'Lived. Died.';
+
+	await author.save();
+
+	let book = new mongooseConnection.models.Book;
+	book.title = 'The best book';
+	book.isbn = 'The best isbn';
+	book.author = author;
+
+	await book.save();
+
+	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'}).exec();
+	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'}).exec();
+
+	t.ok(authorFromDb);
+	t.ok(bookFromDb);
+
+	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+
+	t.equal(''+bookFromDb.author._id, ''+authorFromDb._id);
+});
+
+
 test('initialization of API server', async t => {
 	///// setting up the server
 	fastify = Fastify();
@@ -80,58 +105,46 @@ test('initialization of API server', async t => {
 			models: mongooseConnection.models,
 			prefix: '/api/',
 			setDefaults: true,
-			checkAuth: async (req, reply)=>{
-				if (!isAuthedTestBoolean) {
-					const e = new Error('401, honey!');
-					e.statusCode = 401;
-					throw e;
-				}
-			},
 			methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
 		});
 
 	await fastify.ready();
+
+	t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
+	t.equal(Object.keys(fastify.mongooseAPI.apiRouters).length, 2, 'There are 2 APIRoutes, one for each model');
+
+	t.equal(fastify.mongooseAPI.apiRouters.Author.collectionName, 'authors', 'Collection name used in API path');
+	t.equal(fastify.mongooseAPI.apiRouters.Book.collectionName, 'books', 'Collection name used in API path');
+
+	t.equal(fastify.mongooseAPI.apiRouters.Author.path, '/api/authors', 'API path is composed with prefix + collectionName');
+	t.equal(fastify.mongooseAPI.apiRouters.Book.path, '/api/books', 'API path is composed with prefix + collectionName');
+
 	await fastify.listen(FASTIFY_PORT);
 });
 
-test('Test Auth (not)', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books')
-		.expect(401);
 
-	t.same(response.body, {statusCode: 401, error: 'Unauthorized', message: '401, honey!'}, "There is error and no data response");
-
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.expect(401);
-
-	t.same(response.body, {statusCode: 401, error: 'Unauthorized', message: '401, honey!'}, "There is error and no data response");
-});
-
-
-test('Test Auth (authed)', async t => {
-	//// sign in
-	isAuthedTestBoolean = true;
-	////
-
+test('GET collection endpoints', async t => {
 	let response = null;
 	response = await supertest(fastify.server)
 		.get('/api/books')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
-	t.match(response.body, {total: 0}, "There is response");
+	t.ok(response.body.items[0].__v !== undefined, 'version key is present');
+	t.has(response.body.items[0], {__modelName: undefined}, 'does not have __modelName field');
 
 	response = await supertest(fastify.server)
 		.get('/api/authors')
 		.expect(200)
 		.expect('Content-Type', 'application/json; charset=utf-8')
 
-	console.log(response.body);
-	t.match(response.body, {total: 0}, "There is response");
+	t.equal(response.body.total, 1, 'API returns 1 author');
+	t.equal(response.body.items.length, 1, 'API returns 1 author');
 
+	t.ok(response.body.items[0].__v !== undefined, 'version key is present');
+	t.has(response.body.items[0], {__modelName: undefined}, 'does not have __modelName field');
 });
+
 
 test('teardown', async t=>{
 	await fastify.close();

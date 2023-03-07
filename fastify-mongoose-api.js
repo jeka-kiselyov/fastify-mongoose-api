@@ -10,12 +10,11 @@ function initPlugin(fastify, options, next) {
 	fastify.decorate('mongooseAPI', api);
 
 	next();
-};
+}
 
 const plugin = fp(initPlugin, {
-	fastify: '^2.0.0 || ^3.0.0',
+	fastify: '^2.0.0 || ^3.0.0 || ^4.0.0',
 	name: 'fastify-mongoose-api',
-	dependencies: ['fastify-formbody']
 });
 
 plugin.DefaultModelMethods = DefaultModelMethods;
