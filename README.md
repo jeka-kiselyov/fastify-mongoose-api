@@ -34,6 +34,7 @@ await fastify.listen(8080); /// running the server
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
 - [How to hide document properties/fields in API response?](#how-to-hide-specific-fieldsproperties-in-api-response)
+- [How can I post/put nested documents?](#how-to-post-put-nested)
 - [How to enable CORS for cross-domain requests?](#cors)
 - [How to implement authorization?](#checkauth--function)
 - [Unit tests](#tests)
@@ -435,6 +436,35 @@ and
 `/api/author/AUTHORID/books_as_coauthor` - to list books where AUHTORID is the co-author (next ref to the same model)
 
 while keeping expected internal refs GET routes of `/api/books/BOOKID/author` and `/api/books/BOOKID/coauthor`
+
+## How can I POST or PUT nested documents and their properties?
+
+Use dot notation. So `biography.description` or `biography.born` like:
+
+```javascript
+  await axios.post('/api/authors', {
+    firstName: 'Some',
+    firstName: 'Author',
+    "biography.description": 'Had a happy live',
+    "biography.born": 1960,
+  });
+```
+
+works for creating such schema:
+
+```javascript
+  const authorSchema = mongoose.Schema({
+    firstName: String,
+    lastName: String,
+    biography: { description: String, born: Number },
+    created: {
+      type: Date,
+      default: Date.now
+    }
+  });
+```
+
+Thanks to [EmilianoBruni](https://github.com/EmilianoBruni) for implementation.
 
 ## How to hide specific fields/properties in API response
 
