@@ -65,7 +65,7 @@ class API {
 					checkAuth: checkAuth,
 					prefix: prefix,
 					fastify: this._fastify,
-					schemas: params.schemas[model.modelName]
+					schemas: params.schemas? params.schemas[model.modelName] : {}
 				});
 
 				model.prototype.__api = this;
