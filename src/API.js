@@ -1,5 +1,6 @@
 const APIRouter = require('./APIRouter.js');
 const DefaultModelMethods = require('./DefaultModelMethods.js');
+const { responseSchema404, responseSchema500 } = require('./DefaultSchemas');
 
 class API {
 	constructor(params = {}) {
@@ -22,6 +23,8 @@ class API {
 
 		this._apiRouters = {};
 
+		this._registerReferencedSchemas();
+
 		for (let key of Object.keys(this._models)) {
 			this.addModel(this._models[key], params);
 		}
@@ -29,6 +32,11 @@ class API {
 
 	get apiRouters() {
 		return this._apiRouters;
+	}
+
+	_registerReferencedSchemas() {
+		this._fastify.addSchema(responseSchema404);
+		this._fastify.addSchema(responseSchema500);
 	}
 
 	addModel(model, params = {}) {
@@ -56,7 +64,8 @@ class API {
 					methods: methods,
 					checkAuth: checkAuth,
 					prefix: prefix,
-					fastify: this._fastify
+					fastify: this._fastify,
+					schemas: params.schemas[model.modelName]
 				});
 
 				model.prototype.__api = this;

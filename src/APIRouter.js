@@ -1,4 +1,5 @@
 const debug = require('debug')('fastify-mongoose-api');
+const { defaultSchemas } = require('./DefaultSchemas');
 
 class APIRouter {
 	constructor(params = {}) {
@@ -6,6 +7,8 @@ class APIRouter {
 		this._fastify = params.fastify || null;
 		this._model = params.model || null;
 		this._checkAuth = params.checkAuth || null;
+		this._schemas = params.schemas || {};
+		this._registerReferencedSchemas();
 
 		this._modelName = this._model.modelName;
 
@@ -16,6 +19,7 @@ class APIRouter {
 		this._path = this._prefix + this._collectionName;
 
 		this._apiSubRoutesFunctions = {};
+		this._defaultSchemas = defaultSchemas(this._modelName);
 		this.setUpRoutes();
 	}
 
@@ -27,38 +31,60 @@ class APIRouter {
 		return this._path;
 	}
 
+	_registerReferencedSchemas() {
+		const s = this._schemas;
+		if (s.ref != undefined && s.ref.model != undefined)
+			this._fastify.addSchema(s.ref.model)
+	}
+
 	setUpRoutes() {
 		let path = this._path;
-		this._fastify.get(path, {}, this.routeHandler('routeList'));
-		this._fastify.post(path, {}, this.routeHandler('routePost'));
-		this._fastify.get(path+'/:id', {}, this.routeHandler('routeGet'));
-		this._fastify.put(path+'/:id', {}, this.routeHandler('routePut'));
-		this._fastify.patch(path+'/:id', {}, this.routeHandler('routePut'));
-		this._fastify.delete(path+'/:id', {}, this.routeHandler('routeDelete'));
+		this._fastify.get(path, this._populateSchema('routeList', this._schemas.list), this.routeHandler('routeList'));
+		this._fastify.post(path, this._populateSchema('routePost', this._schemas.post), this.routeHandler('routePost'));
+		this._fastify.get(path + '/:id', this._populateSchema('routeGet', this._schemas.get), this.routeHandler('routeGet'));
+		this._fastify.put(path + '/:id', this._populateSchema('routePut', this._schemas.put), this.routeHandler('routePut'));
+		this._fastify.patch(path + '/:id', this._populateSchema('routePatch', this._schemas.patch), this.routeHandler('routePut'));
+		this._fastify.delete(path + '/:id', this._populateSchema('routeDelete', this._schemas['routeDelete']), this.routeHandler('routeDelete'));
 
 		/// check if there's apiSubRoutes method on the model
 		if (this._model['apiSubRoutes']) {
 			this._apiSubRoutesFunctions = this._model['apiSubRoutes']();
 
 			for (let key of Object.keys(this._apiSubRoutesFunctions)) {
-				this._fastify.get(path+'/:id/'+key, {}, this.routeHandler('routeSub', key));
+				this._fastify.get(path + '/:id/' + key, {}, this.routeHandler('routeSub', key));
 			}
 		}
 
 		debug('set up API path', path, 'sub routes: ', Object.keys(this._apiSubRoutesFunctions));
 	}
 
-	routeHandler(funcName, subRouteName = null) {
-		return async (request, reply) => {
-				if (typeof(this._checkAuth) === 'function') {
-					await this._checkAuth(request, reply);
-				}
-				if (subRouteName) {
-					return await this.routeSub(subRouteName, request, reply);
-				} else {
-					return await this[funcName](request, reply);
+	_populateSchema(funcName, optSchema) {
+		if (optSchema === undefined) return {}
+		// get default schema for funcName and merge with optSchema
+		// merge response separately
+		return {
+			schema: {
+				...this._defaultSchemas[funcName],
+				...optSchema,
+				response: {
+					...this._defaultSchemas[funcName].response,
+					...optSchema.response || {} 
 				}
 			}
+		}
+	}
+
+	routeHandler(funcName, subRouteName = null) {
+		return async (request, reply) => {
+			if (typeof (this._checkAuth) === 'function') {
+				await this._checkAuth(request, reply);
+			}
+			if (subRouteName) {
+				return await this.routeSub(subRouteName, request, reply);
+			} else {
+				return await this[funcName](request, reply);
+			}
+		}
 	}
 
 	async routeSub(routeName, request, reply) {
@@ -66,7 +92,7 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {
+		} catch (e) {
 			doc = null;
 		}
 
@@ -109,11 +135,11 @@ class APIRouter {
 		let ret = {};
 
 		if (search) {
-			query = query.and({$text: {$search: search}});
+			query = query.and({ $text: { $search: search } });
 		}
 
 		if (filter) {
-			let splet = (''+filter).split('=');
+			let splet = ('' + filter).split('=');
 			if (splet.length < 2) {
 				splet[1] = true; /// default value
 			}
@@ -124,7 +150,7 @@ class APIRouter {
 		if (where) {
 
 			const allowedMethods = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'];
-			const sanitize = function(v) {
+			const sanitize = function (v) {
 				if (v instanceof Object) {
 					for (var key in v) {
 						if (/^\$/.test(key) && allowedMethods.indexOf(key) === -1) {
@@ -143,10 +169,10 @@ class APIRouter {
 		}
 
 		if (match) {
-			let splet = (''+match).split('=');
+			let splet = ('' + match).split('=');
 			if (splet.length == 2) {
 				const matchOptions = {};
-				matchOptions[splet[0]] = {$regex: splet[1]};
+				matchOptions[splet[0]] = { $regex: splet[1] };
 				query = query.and(matchOptions);
 			}
 		}
@@ -230,7 +256,7 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {
+		} catch (e) {
 			doc = null;
 		}
 
@@ -249,7 +275,7 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {
+		} catch (e) {
 			doc = null;
 		}
 
@@ -268,7 +294,7 @@ class APIRouter {
 		let doc = null;
 		try {
 			doc = await this._model.findById(id).exec();
-		} catch(e) {
+		} catch (e) {
 			doc = null;
 		}
 
@@ -276,18 +302,18 @@ class APIRouter {
 			reply.callNotFound();
 		} else {
 			await doc.apiDelete(request);
-			reply.send({success: true});
+			reply.send({ success: true });
 		}
 	}
 
 	async arrayOfDocsToAPIResponse(docs, request) {
-		const fn = (doc) => this.docToAPIResponse(doc,request);
+		const fn = (doc) => this.docToAPIResponse(doc, request);
 		const promises = docs.map(fn);
 		return await Promise.all(promises);
 	}
 
 	async docToAPIResponse(doc, request) {
-		return doc ? ( doc.apiValues ? doc.apiValues(request) : doc ) : null;
+		return doc ? (doc.apiValues ? doc.apiValues(request) : doc) : null;
 	}
 }
 
