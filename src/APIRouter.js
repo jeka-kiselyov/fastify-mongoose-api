@@ -33,8 +33,10 @@ class APIRouter {
 
 	_registerReferencedSchemas() {
 		const s = this._schemas;
-		if (s.ref != undefined && s.ref.model != undefined)
-			this._fastify.addSchema(s.ref.model)
+		if (s.ref != undefined) {
+			if (!Array.isArray(s.ref)) s.ref = [s.ref];
+			s.ref.forEach(item => this._fastify.addSchema(item));
+		}
 	}
 
 	setUpRoutes() {
@@ -68,7 +70,7 @@ class APIRouter {
 				...optSchema,
 				response: {
 					...this._defaultSchemas[funcName].response,
-					...optSchema.response || {} 
+					...optSchema.response || {}
 				}
 			}
 		}
