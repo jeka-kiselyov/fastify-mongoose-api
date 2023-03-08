@@ -8,8 +8,7 @@ class APIRouter {
 		this._models = params.models || [];
 		this._fastify = params.fastify || null;
 		this._model = params.model || null;
-		this._methods = params.methods ||
-			['list', 'get', 'post', 'patch', 'put', 'delete'];
+		this._methods = params.methods;
 		this._checkAuth = params.checkAuth || null;
 		this._schemas = params.schemas || {};
 		this._registerReferencedSchemas();
