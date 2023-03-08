@@ -295,6 +295,10 @@ class APIRouter {
 		}
 	}
 
+	async routePatch(request, reply) {
+		await this.routePut(request,reply);
+	}
+
 	async routeDelete(request, reply) {
 		let id = request.params.id || null;
 		let doc = null;
