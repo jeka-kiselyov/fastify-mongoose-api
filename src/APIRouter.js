@@ -1,11 +1,15 @@
 const debug = require('debug')('fastify-mongoose-api');
 const { defaultSchemas } = require('./DefaultSchemas');
 
+const capFL = string => string.charAt(0).toUpperCase() + string.slice(1);
+
 class APIRouter {
 	constructor(params = {}) {
 		this._models = params.models || [];
 		this._fastify = params.fastify || null;
 		this._model = params.model || null;
+		this._methods = params.methods ||
+			['list', 'get', 'post', 'patch', 'put', 'delete'];
 		this._checkAuth = params.checkAuth || null;
 		this._schemas = params.schemas || {};
 		this._registerReferencedSchemas();
@@ -41,12 +45,12 @@ class APIRouter {
 
 	setUpRoutes() {
 		let path = this._path;
-		this._fastify.get(path, this._populateSchema('routeList', this._schemas.list), this.routeHandler('routeList'));
-		this._fastify.post(path, this._populateSchema('routePost', this._schemas.post), this.routeHandler('routePost'));
-		this._fastify.get(path + '/:id', this._populateSchema('routeGet', this._schemas.get), this.routeHandler('routeGet'));
-		this._fastify.put(path + '/:id', this._populateSchema('routePut', this._schemas.put), this.routeHandler('routePut'));
-		this._fastify.patch(path + '/:id', this._populateSchema('routePatch', this._schemas.patch), this.routeHandler('routePut'));
-		this._fastify.delete(path + '/:id', this._populateSchema('routeDelete', this._schemas['routeDelete']), this.routeHandler('routeDelete'));
+		this._methods.forEach(
+			(item) => this._fastify[item === "list" ? 'get' : item](
+				path + (item == "list" || item == "post" ? '' : '/:id'),
+				this._populateSchema('route' + capFL(item), this._schemas['route' + capFL(item)]),
+				this.routeHandler('route' + capFL(item)))
+		);
 
 		/// check if there's apiSubRoutes method on the model
 		if (this._model['apiSubRoutes']) {
