@@ -53,7 +53,6 @@ test('initialization of API server', async t => {
 
 	fastify.register(fastifyMongooseAPI, {
 			models: mongooseConnection.models,
-			prefix: '/api/',
 			setDefaults: true,
 		});
 
@@ -101,7 +100,6 @@ test('initialization of API server with limited methods', async t => {
 
 	fastify.register(fastifyMongooseAPI, {
 			models: mongooseConnection.models,
-			prefix: '/api/',
 			setDefaults: true,
 			methods: ['list', 'get'] // read-only
 		});
