@@ -30,6 +30,7 @@ await fastify.listen(8080); /// running the server
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, projection, sorting, filtering, complex where, search, regex match, populate)](#list-method-options)
 - [Handle extra LIST cases, custom filtering etc](#handle-extra-cases)
+- [Validation and serialization](#validation-and-serialization)
 - [Disable/Limit some routes/methods](#disable-some-routesmethods)
 - [Populate on POST, PUT and single item GET methods)](#populate-on-post-put-and-single-item-get-methods)
 - [Subroutes when there're few refs to the same model)](#subroutes-when-therere-few-refs-to-the-same-model)
@@ -122,6 +123,12 @@ fastify.register(fastifyMongooseAPI, {
         }
     });
 ```
+
+#### .schemas: array of objects
+
+Enable support for fastify [validation and serialization](#validation-and-serialization)
+
+
 
 ## Sample Application
 
@@ -327,6 +334,184 @@ You can create hook method on any model to handle its List requests.
 query is Mongoose query object, so you can extend it by any [query object's methods](https://mongoosejs.com/docs/api.html#Query) depending on your state or request data.
 
 Note: **do not** return anything in this method.
+
+## Validation and Serialization
+
+Generated API can support standard fastify validation and serialization via `.schemas` option.
+
+If you are not confidable with fastify validation and serialization logics, see [documentation](https://www.fastify.io/docs/latest/Reference/Validation-and-Serialization/).
+
+If you don't set some schemas, API works without validation (except, of course, that inherent in the db schema).
+
+If you wish to add a validation and/or a serialization schema for your api you should add an object to `.schemas` array like this:
+
+```javascript
+
+fastify.register(fastifyMongooseAPI, {
+  models: this.db.connection.models,
+  schemas: [
+    {
+      name: 'collection_name',
+      routeGet:    {},
+	    routePost:   {},
+	    routeList:   {},
+	    routePut:    {},
+	    routePatch:  {},
+	    routeDelete: {},
+    },
+    { name: 'another_collection_name',
+      ...
+    },
+    ...
+  ]
+
+```
+
+where `name` is the collection to which this schema will be applied and `route*` are the validation and/or serialization schemas for related restful http verbs.
+
+If you omit one of these, the related verbs will be generated *without* a schema. 
+
+If you set to empty one, [these](src/DefaultSchemas.js) defaults will be added.
+
+If you set an not empty one, it will be merged with defaults, with, obviously, custom parameters with precedence.
+
+As an example, it declares author first and last name as required. We should implement this in `POST`, `PUT` and `PATCH` verbs. Do this for `POST` only
+
+```javascript
+
+const schemas = {
+  name: 'authors',
+  routePost: {
+    body: {
+      properties: {
+        firstName: { type: 'string' },
+        lastName:  { type: 'string' },
+        biography: { type: 'string' }
+      },
+      required: ['firstName', 'lastName']
+    }
+  }
+};
+
+fastify.register(fastifyMongooseAPI, {
+  models: this.db.connection.models,
+  schemas: schemas
+});
+
+```
+
+Add a serialization to `POST` reply  (errors (404/500) are managed by defaults).
+
+```javascript
+
+const schemas = {
+  name: 'authors',
+  routePost: {
+    body: {
+      properties: {
+        firstName: { type: 'string' },
+        lastName:  { type: 'string' },
+        biography: { type: 'string' }
+      },
+      required: ['firstName', 'lastName']
+    },
+    response: {
+      200: {
+        properties: {
+          firstName: { type: 'string' },
+          lastName:  { type: 'string' },
+          biography: { type: 'string' }
+        }
+      }
+    }
+  }
+};
+```
+
+As you can see taking a look to defaults, this plugin supports the URI [references](https://datatracker.ietf.org/doc/html/draft-handrews-json-schema-01#section-8) `$ref` to other schemas.
+
+You can add manually these references through `fastify.addSchema(schema)` or automatically if your schema has a `ref` attribute.
+
+This attribute could be a single object or an array of objects if you wish to register more references at once.
+
+So it's possibile to simplify our example moving duplicated data into a reference
+
+```javascript
+
+const schemas = {
+  name: 'authors',
+  ref: {
+    $id: 'authorsModel',
+    properties: {
+      firstName: { type: 'string' },
+      lastName:  { type: 'string' },
+      biography: { type: 'string' }
+    },
+    required: ['firstName', 'lastName']
+  },
+  routePost: {
+    body: { $ref: 'authorsModel#' },
+    response: {
+      200: { $ref: 'authorsModel#' }
+    }
+  }
+};
+```
+
+The generated validation and serialization is compatible with other plugins like [@fastify/swagger](https://github.com/fastify/fastify-swagger) and [@fastify/swagger-ui](https://github.com/fastify/fastify-swagger-ui) for automatically serving OpenAPI v2/v3 schemas
+
+It's obviously possibile to merge MongoDB schemas and validation schemas in the same object
+
+```javascript
+
+const authorSchema = {
+  name: 'authors',
+  schema: {
+    firstName: String,
+    lastName: String,
+    biography: String,
+    created: { type: Date, default: Date.now }
+  },
+  ref: {
+    $id: 'authorsModel',
+    properties: {
+      firstName: { type: 'string' },
+      lastName:  { type: 'string' },
+      biography: { type: 'string' }
+    },
+    required: ['firstName', 'lastName']
+  },
+  routePost: {
+    body: { $ref: 'authorsModel#' },
+    response: {
+      200: { $ref: 'authorsModel#' }
+    }
+  }
+};
+
+const Author = mongooseConnection.model('Author', authorSchema.schema);
+
+fastify.register(fastifyMongooseAPI, {
+  models: this.db.connection.models,
+  schemas: [ authorSchema, ... ]
+});
+
+```
+
+with the single caution, for newer avj versions, to disable strict mode so avj ignore the `schema` attribute
+
+
+```javascript
+
+const fastify = Fastify({
+  ajv: {
+    customOptions: {
+      strictSchema: false,
+    }
+  }
+});
+
+```
 
 ## Populate on POST, PUT and single item GET methods
 

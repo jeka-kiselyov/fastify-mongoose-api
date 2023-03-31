@@ -1,5 +1,6 @@
 const APIRouter = require('./APIRouter.js');
 const DefaultModelMethods = require('./DefaultModelMethods.js');
+const { responseSchema404, responseSchema500 } = require('./DefaultSchemas');
 
 class API {
 	constructor(params = {}) {
@@ -20,7 +21,12 @@ class API {
 
 		this._exposeModelName = params.exposeModelName || false; // default = false
 
+		this._methods = params.methods ||
+			['list', 'get', 'post', 'patch', 'put', 'delete'];
+
 		this._apiRouters = {};
+
+		this._registerReferencedSchemas();
 
 		for (let key of Object.keys(this._models)) {
 			this.addModel(this._models[key], params);
@@ -31,16 +37,19 @@ class API {
 		return this._apiRouters;
 	}
 
+	_registerReferencedSchemas() {
+		this._fastify.addSchema(responseSchema404);
+		this._fastify.addSchema(responseSchema500);
+	}
+
 	addModel(model, params = {}) {
 		let setDefaults = true;
 		if (params.setDefaults === false) {
 			setDefaults = false;
 		}
 
-		let methods = params.methods ? params.methods : null;
 		let checkAuth = params.checkAuth ? params.checkAuth : null;
 		let prefix = params.prefix ? params.prefix : null;
-
 		if (model.schema) {
 			if (setDefaults) {
 				this.decorateModelWithDefaultAPIMethods(model);
@@ -53,10 +62,12 @@ class API {
 				this._apiRouters[model.modelName] = new APIRouter({
 					models: this._models,
 					model: model,
-					methods: methods,
+					methods: this._methods,
 					checkAuth: checkAuth,
 					prefix: prefix,
-					fastify: this._fastify
+					fastify: this._fastify,
+					schemas: params.schemas ? 
+						params.schemas.find(o => o.name === model.prototype.collection.name) : {}
 				});
 
 				model.prototype.__api = this;

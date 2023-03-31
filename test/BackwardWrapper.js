@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 class BackwardWrapper {
 	static async createConnection(MONGODB_URL) {
-		const createConn = mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true });
+		const createConn = mongoose.createConnection(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 		if (createConn.asPromise) {
 			return await createConn.asPromise();
 		} else {
