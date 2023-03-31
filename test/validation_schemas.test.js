@@ -215,7 +215,15 @@ test('schema initialization', async t => {
 			.post('/api/authors')
 			.send({ firstName: 'Hutin', lastName: 'Puylo', birthday: '1969-30-06' })
 			.expect(500); // got a internal server error
-		t.match(response.body.message, "Cast to date failed");
+
+		t.type(response.body.message, 'string');
+		// it may be a simple:
+		// "Cast to date failed"
+		// or something like:
+		// "Author validation failed: birthday: Cast to Date failed for value \"1969-30-06\" at path \"birthday\""
+		// depending on Fastify ( ajv ? ) version.
+		// So let's just check if there's "Cast to date failed" in the message
+		t.match(response.body.message, /[\s\S]*Cast to [Dd]ate failed[\s\S]*/);
 	});
 
 	test('Shutdown API server', async t => {
