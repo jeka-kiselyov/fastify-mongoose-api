@@ -126,9 +126,11 @@ fastify.register(fastifyMongooseAPI, {
 
 #### .schemas: array of objects
 
-Enable support for fastify [validation and serialization](#validation-and-serialization)
+Enable support for fastify [validation and serialization](#validation-and-serialization). If `.schemaDirPath` is defined, these explicitly defined here have precedence.
 
+#### .schemaDirPath: string
 
+Directory where it's possible to define schemas for [validation and serialization](#validation-and-serialization) in separate files. The directory will be trasverse includes all subdirectories.
 
 ## Sample Application
 
@@ -343,7 +345,7 @@ If you are not confidable with fastify validation and serialization logics, see 
 
 If you don't set some schemas, API works without validation (except, of course, that inherent in the db schema).
 
-If you wish to add a validation and/or a serialization schema for your api you should add an object to `.schemas` array like this:
+If you wish to add a validation and/or a serialization schema for your api you should add an object to `.schemas` array or set a directory where automatically load schemas with `.schemaDirPath`:
 
 ```javascript
 
@@ -363,7 +365,8 @@ fastify.register(fastifyMongooseAPI, {
       ...
     },
     ...
-  ]
+  ],
+  schemaDirPath: '/path/to/your/schemas',
 
 ```
 
@@ -457,6 +460,7 @@ const schemas = {
   }
 };
 ```
+If `.schemas` and `schemaDirPath` are used together, the schemas defined in `.schemas` have precedence to there loaded in `schemaDirPath`.
 
 The generated validation and serialization is compatible with other plugins like [@fastify/swagger](https://github.com/fastify/fastify-swagger) and [@fastify/swagger-ui](https://github.com/fastify/fastify-swagger-ui) for automatically serving OpenAPI v2/v3 schemas
 
