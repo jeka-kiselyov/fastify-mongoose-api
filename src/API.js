@@ -75,7 +75,11 @@ class API {
 					prefix: prefix,
 					fastify: this._fastify,
 					schemas: this.schemas ?
-						this.schemas.find(o => o.name === model.prototype.collection.name) : {}
+						this.schemas.find(o =>
+							o.name.toLowerCase().replace(/s$/g, '') 
+							===
+							model.prototype.collection.name.toLowerCase().replace(/s$/g, '')
+						) : {}
 				});
 
 				model.prototype.__api = this;
