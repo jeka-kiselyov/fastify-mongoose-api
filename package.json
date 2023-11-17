@@ -1,6 +1,6 @@
 {
   "name": "fastify-mongoose-api",
-  "version": "1.2.20",
+  "version": "1.2.21",
   "description": "API for Mongoose models in one line of code",
   "main": "fastify-mongoose-api.js",
   "scripts": {
@@ -20,11 +20,11 @@
   "author": "Jeka Kiselyov",
   "license": "MIT",
   "dependencies": {
+    "@fastify/formbody": "^6.0.1",
     "debug": "^4.2.0",
     "fastify": "^3.8.0 || ^2.3.0",
-    "fastify-formbody": "^5.0.0 || ^3.1.0",
     "fastify-plugin": "^3.0.0 || ^1.5.0",
-    "mongoose": "^5.5.4"
+    "mongoose": "^5.5.4 || ^7.6.3"
   },
   "devDependencies": {
     "eslint": "^7.15.0",

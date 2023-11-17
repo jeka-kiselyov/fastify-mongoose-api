@@ -8,7 +8,7 @@ const supertest = require('supertest');
 
 const Fastify = require('fastify');
 const mongoose = require('mongoose');
-const fastifyFormbody = require('fastify-formbody');
+const fastifyFormbody = require('@fastify/formbody');
 
 const FASTIFY_PORT = 3137;
 // eslint-disable-next-line no-undef
