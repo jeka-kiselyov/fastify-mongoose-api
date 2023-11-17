@@ -12,7 +12,7 @@ const path = require('path');
 
 const Fastify = require('fastify');
 const mongoose = require('mongoose');
-const fastifyFormbody = require('fastify-formbody');
+const fastifyFormbody = require('@fastify/formbody');
 
 const FASTIFY_PORT = 3137;
 const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
@@ -102,11 +102,11 @@ const schema_books = {
 const createSchemasInTmpPath = () => {
 	const tmpPath = fs.mkdtempSync(path.join(os.tmpdir(), 'mfas-'));
 	// authors.schema.js
-	fs.writeFileSync(path.join(tmpPath, 'authors.schema.js'), 
+	fs.writeFileSync(path.join(tmpPath, 'authors.schema.js'),
 		'module.exports=' + JSON.stringify(schema_authors));
 	// subdir/books.schema.js
 	fs.mkdirSync(path.join(tmpPath,'subdir'));
-	fs.writeFileSync(path.join(tmpPath, 'subdir', 'books.schema.js'), 
+	fs.writeFileSync(path.join(tmpPath, 'subdir', 'books.schema.js'),
 		'module.exports=' + JSON.stringify(schema_books));
 	return tmpPath;
 };

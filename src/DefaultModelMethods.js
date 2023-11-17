@@ -34,7 +34,7 @@ class DefaultModelMethods {
 		};
 
 		this.schema.eachPath((pathname, schematype) => {
-			if (schematype && schematype.instance == 'ObjectID' && schematype.options && schematype.options.ref) {
+			if (schematype && schematype.instance && schematype.instance.toLowerCase() == 'objectid' && schematype.options && schematype.options.ref) {
 				/// there is Ref ObjectId in this model
 				subRoutes[pathname] = fPopulated(pathname);
 			}
@@ -45,7 +45,7 @@ class DefaultModelMethods {
 			let model = this.db.models[key];
 			model.schema.eachPath((refKey, schematype) => {
 
-				if (schematype && schematype.instance == 'ObjectID' && schematype.options && schematype.options.ref && schematype.options.ref == this.modelName) {
+				if (schematype && schematype.instance && schematype.instance.toLowerCase() == 'objectid' && schematype.options && schematype.options.ref && schematype.options.ref == this.modelName) {
 					//// there is Ref to this model in other model
 					let pathname = model.prototype.collection.name;
 					if (!subRoutes[pathname]) {
@@ -238,7 +238,7 @@ class DefaultModelMethods {
 	 */
 	async apiDelete() {
 		//// this points to document (schema.methods.)
-		await this.remove();
+		await this.deleteOne();
 
 	}
 }

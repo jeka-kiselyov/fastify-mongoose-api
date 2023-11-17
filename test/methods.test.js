@@ -8,7 +8,7 @@ const supertest = require('supertest');
 
 const Fastify = require('fastify');
 const mongoose = require('mongoose');
-const fastifyFormbody = require('fastify-formbody');
+const fastifyFormbody = require('@fastify/formbody');
 
 const FASTIFY_PORT = 3137;
 const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
@@ -58,8 +58,8 @@ test('initialization of API server', async t => {
 
 	await fastify.ready();
 
-	t.strictSame(fastify.mongooseAPI._methods, 
-		['list', 'get', 'post', 'patch', 'put', 'delete'], 
+	t.strictSame(fastify.mongooseAPI._methods,
+		['list', 'get', 'post', 'patch', 'put', 'delete'],
 		'mongooseAPI defaults methods loaded' );
 
 	await fastify.listen(FASTIFY_PORT);
@@ -106,8 +106,8 @@ test('initialization of API server with limited methods', async t => {
 
 	await fastify.ready();
 
-	t.strictSame(fastify.mongooseAPI._methods, 
-		['list', 'get'], 
+	t.strictSame(fastify.mongooseAPI._methods,
+		['list', 'get'],
 		'mongooseAPI custom methods loaded' );
 
 	await fastify.listen(FASTIFY_PORT);
