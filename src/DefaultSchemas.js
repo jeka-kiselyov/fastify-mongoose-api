@@ -148,6 +148,15 @@ const defaultSchemas = (modelName) => {
         routeDelete: {
             summary: 'Delete existing ' + modelName,
             tags: [modelName],
+            params: {
+                type: 'object',
+                properties: {
+                    id: {
+                        type: 'string',
+                        description: 'Unique identifier of ' + modelName,
+                    },
+                },
+            },
             response: {
                 200: {
                     description: 'Success',
