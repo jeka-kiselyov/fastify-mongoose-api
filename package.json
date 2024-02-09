@@ -4,8 +4,8 @@
   "description": "API for Mongoose models in one line of code",
   "main": "fastify-mongoose-api.js",
   "scripts": {
-    "test": "tap -j=1  --allow-incomplete-coverage ./test/*.test.js",
-    "coverage": "tap -j=1 ./test/*.test.js"
+    "test": "tap -j1  --allow-incomplete-coverage ./test/*.test.js",
+    "coverage": "tap -j1 ./test/*.test.js"
   },
   "repository": "https://github.com/jeka-kiselyov/fastify-mongoose-api.git",
   "keywords": [
