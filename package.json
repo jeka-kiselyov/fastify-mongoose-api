@@ -20,20 +20,20 @@
   "author": "Jeka Kiselyov",
   "license": "MIT",
   "dependencies": {
-    "@fastify/formbody": "^6.0.1",
-    "debug": "^4.2.0",
-    "fastify": "^3.8.0 || ^2.3.0",
-    "fastify-plugin": "^3.0.0 || ^1.5.0",
-    "mongoose": "^5.5.4 || ^7.6.3"
+    "@fastify/formbody": "^7.4.0",
+    "debug": "^4.3.4",
+    "fastify": "^4.26.0",
+    "fastify-plugin": "^4.5.1",
+    "mongoose": "^8.1.1"
   },
   "devDependencies": {
-    "eslint": "^7.15.0",
-    "grunt": "^1.0.4",
+    "eslint": "^8.56.0",
+    "grunt": "^1.6.1",
     "grunt-contrib-watch": "^1.1.0",
-    "grunt-env": "^0.4.4",
-    "grunt-eslint": "^23.0.0",
+    "grunt-env": "^1.0.1",
+    "grunt-eslint": "^24.3.0",
     "grunt-tape": "^0.1.0",
-    "supertest": "^4.0.2",
+    "supertest": "^6.3.4",
     "tap": "^18.7.0"
   }
 }
