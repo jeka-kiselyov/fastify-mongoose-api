@@ -28,7 +28,7 @@ jobs:
       - name: Run tests
         run: npm run test
         env:
-          MONGODB_URL: mongodb://localhost:27017/test
+          DATABASE_URI: mongodb://localhost:27017/test
       #- name: coveralls
       #  uses: coverallsapp/github-action@master
       #  with:
