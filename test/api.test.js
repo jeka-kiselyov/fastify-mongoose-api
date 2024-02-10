@@ -7,7 +7,6 @@ const { test } = t;
 
 const Fastify = require('fastify');
 const mongoose = require('mongoose');
-const fastifyFormbody = require('@fastify/formbody');
 
 const MONGODB_URL =
     process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
@@ -102,10 +101,6 @@ test('schema ok', async t => {
 test('initialization of API server', async t => {
     ///// setting up the server
     fastify = Fastify();
-    //
-    // // //// need this to handle post/put/patch request parameters
-    fastify.register(fastifyFormbody);
-
     fastify.register(fastifyMongooseAPI, {
         models: mongooseConnection.models,
         prefix: '/api/',
