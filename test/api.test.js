@@ -9,7 +9,6 @@ const Fastify = require('fastify');
 const mongoose = require('mongoose');
 const fastifyFormbody = require('@fastify/formbody');
 
-const FASTIFY_PORT = 3137;
 const MONGODB_URL =
     process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
 
@@ -144,8 +143,6 @@ test('initialization of API server', async t => {
         '/api/books',
         'API path is composed with prefix + collectionName'
     );
-
-    await fastify.listen({ port: FASTIFY_PORT });
 });
 
 test('GET collection endpoints', async t => {
