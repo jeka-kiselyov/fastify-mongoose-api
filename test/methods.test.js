@@ -1,17 +1,15 @@
-'use strict'
+'use strict';
 
 const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
 
 const t = require('tap');
 const { test } = t;
-const supertest = require('supertest');
 
 const Fastify = require('fastify');
 const mongoose = require('mongoose');
-const fastifyFormbody = require('@fastify/formbody');
 
-const FASTIFY_PORT = 3137;
-const MONGODB_URL = process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
+const MONGODB_URL =
+    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
 
 const BackwardWrapper = require('./BackwardWrapper.js');
 
@@ -19,134 +17,182 @@ let mongooseConnection = null;
 let fastify = null;
 
 let schema = {
-	firstName: String,
-	lastName: String,
-}
+    firstName: String,
+    lastName: String
+};
 let _id = null;
 
 test('mongoose db initialization', async t => {
-	t.plan(2);
+    t.plan(2);
 
-	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
+    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
     t.ok(mongooseConnection);
     t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
 
 test('schema initialization', async t => {
-	const authorSchema = mongoose.Schema(schema);
+    const authorSchema = mongoose.Schema(schema);
 
-	const Author = mongooseConnection.model('Author', authorSchema);
+    mongooseConnection.model('Author', authorSchema);
 
-	t.ok(mongooseConnection.models.Author);
+    t.ok(mongooseConnection.models.Author);
 });
 
-test('clean up test collections', async t => {
-	await mongooseConnection.models.Author.deleteMany({}).exec();
+test('clean up test collections', async () => {
+    await mongooseConnection.models.Author.deleteMany({}).exec();
 });
 
 test('initialization of API server', async t => {
-	///// setting up the server
-	fastify = Fastify();
-	//
-	// // //// need this to handle post/put/patch request parameters
-	fastify.register(fastifyFormbody);
+    ///// setting up the server
+    fastify = Fastify();
 
-	fastify.register(fastifyMongooseAPI, {
-			models: mongooseConnection.models,
-			setDefaults: true,
-		});
+    fastify.register(fastifyMongooseAPI, {
+        models: mongooseConnection.models,
+        setDefaults: true
+    });
 
-	await fastify.ready();
+    await fastify.ready();
 
-	t.strictSame(fastify.mongooseAPI._methods,
-		['list', 'get', 'post', 'patch', 'put', 'delete'],
-		'mongooseAPI defaults methods loaded' );
-
-	await fastify.listen(FASTIFY_PORT);
+    t.strictSame(
+        fastify.mongooseAPI._methods,
+        ['list', 'get', 'post', 'patch', 'put', 'delete'],
+        'mongooseAPI defaults methods loaded'
+    );
 });
-
 
 test('POST item test', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.post('/api/authors')
-		.send({firstName: 'Hutin', lastName: 'Puylo'})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-	t.match(response.body, {firstName: 'Hutin', lastName: 'Puylo'}, "POST api ok");
-	_id = response.body._id;
-	t.ok(_id, "_id generated");
+    let response = null;
+    response = await fastify.inject({
+        method: 'POST',
+        url: '/api/authors',
+        payload: { firstName: 'Hutin', lastName: 'Puylo' }
+    });
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+    t.equal(response.statusCode, 200, 'POST api ok');
+    t.equal(
+        response.headers['content-type'],
+        'application/json; charset=utf-8'
+    );
 
+    const responseBody = response.json();
+    t.equal(responseBody.firstName, 'Hutin');
+    t.equal(responseBody.lastName, 'Puylo');
+    t.match(
+        responseBody,
+        { firstName: 'Hutin', lastName: 'Puylo' },
+        'POST api ok'
+    );
+    _id = responseBody._id;
+    t.ok(_id, '_id generated');
 
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo'}, "Listed same");
-	t.equal(response.body.total, 1, 'There are author now');
+    response = await fastify.inject({
+        method: 'GET',
+        url: '/api/authors'
+    });
+
+    t.equal(response.statusCode, 200, 'GET api ok');
+    t.equal(
+        response.headers['content-type'],
+        'application/json; charset=utf-8'
+    );
+
+    t.match(
+        response.json().items[0],
+        { firstName: 'Hutin', lastName: 'Puylo' },
+        'Listed same'
+    );
+    t.equal(response.json().total, 1, 'There are author now');
 });
 
-test('Shutdown API server', async t=>{
-	await fastify.close();
+test('Shutdown API server', async () => {
+    await fastify.close();
 });
 
 test('initialization of API server with limited methods', async t => {
-	///// setting up the server
-	fastify = Fastify();
-	//
-	// // //// need this to handle post/put/patch request parameters
-	fastify.register(fastifyFormbody);
+    ///// setting up the server
+    fastify = Fastify();
 
-	fastify.register(fastifyMongooseAPI, {
-			models: mongooseConnection.models,
-			setDefaults: true,
-			methods: ['list', 'get'] // read-only
-		});
+    fastify.register(fastifyMongooseAPI, {
+        models: mongooseConnection.models,
+        setDefaults: true,
+        methods: ['list', 'get'] // read-only
+    });
 
-	await fastify.ready();
+    await fastify.ready();
 
-	t.strictSame(fastify.mongooseAPI._methods,
-		['list', 'get'],
-		'mongooseAPI custom methods loaded' );
-
-	await fastify.listen(FASTIFY_PORT);
+    t.strictSame(
+        fastify.mongooseAPI._methods,
+        ['list', 'get'],
+        'mongooseAPI custom methods loaded'
+    );
 });
 
-
 test('POST item is invalid', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.post('/api/authors')
-		.send({firstName: 'Hutin', lastName: 'Puylo'})
-		.expect(404)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+    let response = null;
+    response = await fastify.inject({
+        method: 'POST',
+        url: '/api/authors',
+        payload: { firstName: 'Hutin', lastName: 'Puylo' }
+    });
 
-	t.match(response.body.message, "Route POST:/api/authors not found" , "POST denied");
+    t.equal(response.statusCode, 404, 'POST denied');
+    t.equal(
+        response.headers['content-type'],
+        'application/json; charset=utf-8',
+        'Content-Type is correct'
+    );
+
+    t.match(
+        response.json().message,
+        'Route POST:/api/authors not found',
+        'POST denied'
+    );
 });
 
 test('GET is valid', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/authors/' + _id)
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+    let response = null;
+    response = await fastify.inject({
+        method: 'GET',
+        url: '/api/authors/' + _id
+    });
 
-	t.match(response.body, {firstName: 'Hutin', lastName: 'Puylo'}, "Item found");
+    t.equal(response.statusCode, 200, 'GET is valid');
+    t.equal(
+        response.headers['content-type'],
+        'application/json; charset=utf-8',
+        'Content-Type is correct'
+    );
+
+    t.match(
+        response.json(),
+        { firstName: 'Hutin', lastName: 'Puylo' },
+        'Item found'
+    );
 });
 
 test('LIST is valid', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+    let response = null;
+    response = await fastify.inject({
+        method: 'GET',
+        url: '/api/authors'
+    });
 
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo'}, "Listed same");
-	t.equal(response.body.total, 1, 'There are author now');
+    t.equal(response.statusCode, 200, 'GET is valid');
+    t.equal(
+        response.headers['content-type'],
+        'application/json; charset=utf-8',
+        'Content-Type is correct'
+    );
+
+    t.match(
+        response.json().items[0],
+        { firstName: 'Hutin', lastName: 'Puylo' },
+        'Listed same'
+    );
+    t.equal(response.json().total, 1, 'There are author now');
 });
 
-test('teardown', async t=>{
-	await fastify.close();
-	await mongooseConnection.close();
+test('teardown', async () => {
+    await fastify.close();
+    await mongooseConnection.close();
 });
