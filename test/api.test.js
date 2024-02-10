@@ -4,7 +4,6 @@ const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
 
 const t = require('tap');
 const { test } = t;
-const supertest = require('supertest');
 
 const Fastify = require('fastify');
 const mongoose = require('mongoose');
@@ -22,8 +21,8 @@ test('mongoose db initialization', async t => {
 	t.plan(2);
 
 	mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+	t.ok(mongooseConnection);
+	t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
 });
 
 test('schema initialization', async t => {
@@ -38,7 +37,7 @@ test('schema initialization', async t => {
 			default: Date.now
 		}
 	});
-	authorSchema.index({firstName: 'text', lastName: 'text', biography: 'text'}); /// you can use wildcard here too: https://stackoverflow.com/a/28775709/1119169
+	authorSchema.index({ firstName: 'text', lastName: 'text', biography: 'text' }); /// you can use wildcard here too: https://stackoverflow.com/a/28775709/1119169
 
 	const Author = mongooseConnection.model('Author', authorSchema);
 
@@ -46,9 +45,9 @@ test('schema initialization', async t => {
 		title: String,
 		isbn: String,
 		author: {
-	        type: mongoose.Schema.Types.ObjectId,
-	        ref: 'Author'
-	    },
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Author'
+		},
 		created: {
 			type: Date,
 			default: Date.now
@@ -82,15 +81,15 @@ test('schema ok', async t => {
 
 	await book.save();
 
-	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'}).exec();
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'}).exec();
+	let authorFromDb = await mongooseConnection.models.Author.findOne({ firstName: 'Jay' }).exec();
+	let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book' }).exec();
 
 	t.ok(authorFromDb);
 	t.ok(bookFromDb);
 
 	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-	t.equal(''+bookFromDb.author._id, ''+authorFromDb._id);
+	t.equal('' + bookFromDb.author._id, '' + authorFromDb._id);
 });
 
 
@@ -103,11 +102,11 @@ test('initialization of API server', async t => {
 	fastify.register(fastifyFormbody);
 
 	fastify.register(fastifyMongooseAPI, {
-			models: mongooseConnection.models,
-			prefix: '/api/',
-			setDefaults: true,
-			methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
-		});
+		models: mongooseConnection.models,
+		prefix: '/api/',
+		setDefaults: true,
+		methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
+	});
 
 	await fastify.ready();
 
@@ -126,398 +125,490 @@ test('initialization of API server', async t => {
 
 test('GET collection endpoints', async t => {
 	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/books'
+	});
 
-	t.equal(response.body.total, 1, 'API returns 1 book');
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	t.equal(response.json().total, 1, 'API returns 1 book');
 
-	t.equal(response.body.total, 1, 'API returns 1 author');
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors'
+	});
+
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 1, 'API returns 1 author');
 });
 
 test('POST item test', async t => {
 	let response = null;
-	response = await supertest(fastify.server)
-		.post('/api/authors')
-		.send({firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'POST',
+		url: '/api/authors',
+		payload: { firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One' }
+	});
 
-	t.match(response.body, {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "POST api ok");
+	t.match(response.json(), { firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One' }, "POST api ok");
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors'
+	});
 
-	t.equal(response.body.total, 2, 'There are two authors now');
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 2, 'There are two authors now');
 });
 
 
 test('GET collection filtering', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ filter: 'lastName=Puylo' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { filter: 'lastName=Puylo' }
+	});
 
-	t.equal(response.body.total, 1, 'API returns 1 filtered author');
-	t.equal(response.body.items.length, 1, 'API returns 1 filtered author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 1, 'API returns 1 filtered author');
+	t.equal(response.json().items.length, 1, 'API returns 1 filtered author');
+	t.match(response.json().items[0], { firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One' }, "Filtered author");
 });
 
 
 test('GET collection search', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ search: 'One Little' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { search: 'One Little' }
+	});
 
-	t.equal(response.body.total, 1, 'API returns 1 searched author');
-	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 1, 'API returns 1 searched author');
+	t.equal(response.json().items.length, 1, 'API returns 1 searched author');
+	t.match(response.json().items[0], { firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One' }, "Filtered author");
 });
 
 test('GET collection regex match', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ match: 'lastName=Puy' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { match: 'lastName=Puy' }
+	});
 
-	t.equal(response.body.total, 1, 'API returns 1 searched author');
-	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+	t.equal(response.json().total, 1, 'API returns 1 searched author');
+	t.equal(response.json().items.length, 1, 'API returns 1 searched author');
+	t.match(response.json().items[0], { firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One' }, "Filtered author");
 });
 
 test('GET collection case-insensitive regex match', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ match: 'lastName=(?i)puy' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { match: 'lastName=(?i)puy' }
+	});
 
-	t.equal(response.body.total, 1, 'API returns 1 searched author');
-	t.equal(response.body.items.length, 1, 'API returns 1 searched author');
-	t.match(response.body.items[0], {firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One'}, "Filtered author");
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 1, 'API returns 1 searched author');
+	t.equal(response.json().items.length, 1, 'API returns 1 searched author');
+	t.match(response.json().items[0], { firstName: 'Hutin', lastName: 'Puylo', biography: 'The Little One' }, "Filtered author");
 });
 
 test('GET collection sorting', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ sort: 'created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8');
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { sort: 'created' }
+	});
 
-	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
-	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
-	t.match(response.body.items[0], {firstName: 'Jay'}, "The oldest first");
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ sort: '-created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
 
-	t.equal(response.body.total, 2, 'API returns 2 sorted authors');
-	t.equal(response.body.items.length, 2, 'API returns 2 sorted authors');
-	t.match(response.body.items[0], {firstName: 'Hutin'}, "Most recent first");
+	t.equal(response.json().total, 2, 'API returns 2 sorted authors');
+	t.equal(response.json().items.length, 2, 'API returns 2 sorted authors');
+	t.match(response.json().items[0], { firstName: 'Jay' }, "The oldest first");
+
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { sort: '-created' }
+	});
+
+
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 2, 'API returns 2 sorted authors');
+	t.equal(response.json().items.length, 2, 'API returns 2 sorted authors');
+	t.match(response.json().items[0], { firstName: 'Hutin' }, "Most recent first");
 });
 
 test('GET collection pagination', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ limit: 1, offset: 0, sort: '-created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { limit: 1, offset: 0, sort: '-created' }
+	});
 
-	t.equal(response.body.total, 2, 'Total is everything');
-	t.equal(response.body.items.length, 1, 'Returned is paginated');
-	t.match(response.body.items[0], {firstName: 'Hutin'}, "Most recent is on the first page");
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ limit: 1, offset: 1, sort: '-created' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	t.equal(response.json().total, 2, 'Total is everything');
+	t.equal(response.json().items.length, 1, 'Returned is paginated');
+	t.match(response.json().items[0], { firstName: 'Hutin' }, "Most recent is on the first page");
 
-	t.equal(response.body.total, 2, 'Total is everything');
-	t.equal(response.body.items.length, 1, 'Returned is paginated');
-	t.match(response.body.items[0], {firstName: 'Jay'}, "Older is on the second page");
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { limit: 1, offset: 1, sort: '-created' }
+	});
+
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+
+	t.equal(response.json().total, 2, 'Total is everything');
+	t.equal(response.json().items.length, 1, 'Returned is paginated');
+	t.match(response.json().items[0], { firstName: 'Jay' }, "Older is on the second page");
 });
 
 test('GET collection projection', async t => {
 	let response = null;
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ fields: 'firstName,lastName' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { fields: 'firstName,lastName' }
+	});
 
-	t.equal(response.body.total, 2, 'Total is everything');
-	t.equal(response.body.items.length, 2, 'API returns everything');
-	t.same(Object.keys(response.body.items[0]), [ '_id', 'firstName', 'lastName' ], "Only contains projection and _id");
-	t.same(Object.keys(response.body.items[1]), [ '_id', 'firstName', 'lastName' ], "Only contains projection and _id");
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
 
-	response = await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ fields: '-firstName,-lastName,-__v' }) //// URL GET parameters
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	t.equal(response.json().total, 2, 'Total is everything');
+	t.equal(response.json().items.length, 2, 'API returns everything');
+	t.same(Object.keys(response.json().items[0]), ['_id', 'firstName', 'lastName'], "Only contains projection and _id");
+	t.same(Object.keys(response.json().items[1]), ['_id', 'firstName', 'lastName'], "Only contains projection and _id");
 
-	t.equal(response.body.total, 2, 'Total is everything');
-	t.equal(response.body.items.length, 2, 'API returns everything');
-	t.same(Object.keys(response.body.items[0]), [ '_id', 'created', 'biography' ], "Exclude projection fields");
-	t.same(Object.keys(response.body.items[1]), [ '_id', 'created', 'biography' ], "Exclude projection fields");
-
-	t.rejects(await supertest(fastify.server)
-		.get('/api/authors')
-		.query({ fields: '-firstName,lastName' }) //// URL GET parameters
-		.expect(500)
-		.expect('Content-Type', 'application/json; charset=utf-8'));
-});
-
-test('GET single item', async t => {
-	let authorFromDb = await mongooseConnection.models.Author.findOne({firstName: 'Jay'});
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books/'+bookFromDb.id)
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.match(response.body, {title: 'The best book', isbn: 'The best isbn'}, "Single item data ok");
-	t.match(response.body, {_id: bookFromDb.id}, "Single item id ok");
-
-	response = await supertest(fastify.server)
-		.get('/api/authors/'+authorFromDb.id)
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
-
-	t.match(response.body, {firstName: 'Jay'}, "Single item data ok");
-	t.match(response.body, {_id: authorFromDb.id}, "Single item id ok");
-	// response = await supertest(fastify.server)
-	// 	.get('/api/authors')
-	// 	.expect(200)
-	// 	.expect('Content-Type', 'application/json; charset=utf-8')
-
-	// t.equal(response.body.total, 1, 'API returns 1 author');
-});
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { fields: '-firstName,-lastName,-__v' }
+	});
 
 
-test('GET single item 404', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books/SOMEWRONGID')
-		.expect(404)
-		.expect('Content-Type', 'application/json; charset=utf-8');
+	// Assert the response
+	t.equal(response.statusCode, 200, 'Response status code is 200');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
 
-	t.equal(response.status, 404);
-});
+	t.equal(response.json().total, 2, 'Total is everything');
+	t.equal(response.json().items.length, 2, 'API returns everything');
+	t.same(Object.keys(response.json().items[0]), ['_id', 'created', 'biography'], "Exclude projection fields");
+	t.same(Object.keys(response.json().items[1]), ['_id', 'created', 'biography'], "Exclude projection fields");
 
-test('GET single item Refs', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+	response = await fastify.inject({
+		method: 'GET',
+		url: '/api/authors',
+		query: { fields: '-firstName,lastName' }
+	});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books/'+bookFromDb.id+'/author')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	// Assert the response
+	t.equal(response.statusCode, 500, 'Response status code is 500');
+	t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+	});
 
-	t.match(response.body, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Single item Ref ok");
-	t.match(response.body, {_id: ''+bookFromDb.author.id}, "Single item id ok");
+	test('GET single item', async t => {
+		let authorFromDb = await mongooseConnection.models.Author.findOne({ firstName: 'Jay' });
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book' });
 
-	response = await supertest(fastify.server)
-		.get('/api/authors/'+bookFromDb.author.id+'/books')
-		// .expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		let response = null;
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/books/' + bookFromDb.id,
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-	t.equal(response.body.total, 1, 'API returns 1 refed book');
-	t.equal(response.body.items.length, 1, 'API returns 1 refed book');
-	t.match(response.body.items[0], {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Refed book");
-});
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: 'The best book', isbn: 'The best isbn' }, "Single item data ok");
+		t.match(response.json(), { _id: bookFromDb.id }, "Single item id ok");
 
-test('GET single item with populated field', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	// await bookFromDb.populate('author').execPopulate();
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/authors/' + authorFromDb.id,
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.get('/api/books/'+bookFromDb.id+'?populate=author')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { firstName: 'Jay' }, "Single item data ok");
+		t.match(response.json(), { _id: authorFromDb.id }, "Single item id ok");
+	});
 
-	t.match(response.body, {title: bookFromDb.title, isbn: bookFromDb.isbn}, "Book is ok");
-	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
-	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
-});
+	test('GET single item 404', async t => {
+		let response = null;
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/books/SOMEWRONGID',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-test('POST item with ref test', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
+		t.equal(response.statusCode, 404, 'Response status code is 404');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+	});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.post('/api/books')
-		.send({title: 'Another One', isbn: 'isbn', author: ''+bookFromDb.author.id})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	test('GET single item Refs', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-	t.match(response.body, {title: 'Another One', isbn: 'isbn', author: ''+bookFromDb.author.id}, "POST api ok");
+		let response = null;
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/books/' + bookFromDb.id + '/author',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-	response = await supertest(fastify.server)
-		.get('/api/authors/'+bookFromDb.author.id+'/books')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName }, "Single item Ref ok");
+		t.match(response.json(), { _id: '' + bookFromDb.author.id }, "Single item id ok");
 
-	t.equal(response.body.total, 2, 'API returns 2 refed books');
-	t.equal(response.body.items.length, 2, 'API returns 2 refed books');
-});
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/authors/' + bookFromDb.author.id + '/books',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-test('PATCH item test', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.equal(response.json().total, 1, 'API returns 1 refed book');
+		t.equal(response.json().items.length, 1, 'API returns 1 refed book');
+		t.match(response.json().items[0], { title: bookFromDb.title, isbn: bookFromDb.isbn }, "Refed book");
+	});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.patch('/api/books/'+bookFromDb.id)
-		.send({title: 'The best book patched', isbn: 'The best isbn patched'})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+	test('GET single item with populated field', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-	t.match(response.body, {title: 'The best book patched', isbn: 'The best isbn patched', author: ''+bookFromDb.author.id}, "PUT api ok");
-	t.match(response.body, {author: ''+bookFromDb.author.id}, "Author still refs to original");
-});
+		let response = null;
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/books/' + bookFromDb.id + '?populate=author',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-test('PATCH single item 404', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.patch('/api/books/SOMEWRONGID')
-		.expect(404)
-		.expect('Content-Type', 'application/json; charset=utf-8');
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: bookFromDb.title, isbn: bookFromDb.isbn }, "Book is ok");
+		t.match(response.json().author, { firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName }, "Populated author is ok");
+		t.match(response.json().author, { _id: '' + bookFromDb.author.id }, "Populated author id is ok");
+	});
 
-	t.equal(response.status, 404);
-});
+	test('POST item with ref test', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-test('PUT item test', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book patched'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
+		let response = null;
+		response = await fastify.inject({
+			method: 'POST',
+			url: '/api/books',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			payload: JSON.stringify({ title: 'Another One', isbn: 'isbn', author: '' + bookFromDb.author.id })
+		});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.put('/api/books/'+bookFromDb.id)
-		.send({title: 'The best book updated', isbn: 'The best isbn updated'})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: 'Another One', isbn: 'isbn', author: '' + bookFromDb.author.id }, "POST api ok");
 
-	t.match(response.body, {title: 'The best book updated', isbn: 'The best isbn updated', author: ''+bookFromDb.author.id}, "PUT api ok");
-	t.match(response.body, {author: ''+bookFromDb.author.id}, "Author still refs to original");
-});
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/authors/' + bookFromDb.author.id + '/books',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-test('PUT single item 404', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.put('/api/books/SOMEWRONGID')
-		.expect(404)
-		.expect('Content-Type', 'application/json; charset=utf-8');
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.equal(response.json().total, 2, 'API returns 2 refed books');
+		t.equal(response.json().items.length, 2, 'API returns 2 refed books');
+	});
 
-	t.equal(response.status, 404);
-});
+	test('PATCH item test', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-test('DELETE item test', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The best book updated'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
-	let author = bookFromDb.author;
+		let response = null;
+		response = await fastify.inject({
+			method: 'PATCH',
+			url: '/api/books/' + bookFromDb.id,
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			payload: JSON.stringify({ title: 'The best book patched', isbn: 'The best isbn patched' })
+		});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.delete('/api/books/'+bookFromDb.id)
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8');
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: 'The best book patched', isbn: 'The best isbn patched', author: '' + bookFromDb.author.id }, "PUT api ok");
+		t.match(response.json(), { author: '' + bookFromDb.author.id }, "Author still refs to original");
+	});
 
-	t.match(response.body, {success: true}, "DELETE api ok");
+	test('PATCH single item 404', async t => {
+		let response = null;
+		response = await fastify.inject({
+			method: 'PATCH',
+			url: '/api/books/SOMEWRONGID',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			body: { title: 'The best book patched', isbn: 'The best isbn patched'}
+		});
 
-	response = await supertest(fastify.server)
-		.get('/api/authors/'+bookFromDb.author.id+'/books')
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		t.equal(response.statusCode, 404, 'Response status code is 404');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+	});
 
-	t.equal(response.body.total, 1, 'API returns 1 refed books after delete');
-	t.equal(response.body.items.length, 1, 'API returns 1 refed books after delete');
-});
+	test('PUT item test', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book patched' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-test('DELETE single item 404', async t => {
-	let response = null;
-	response = await supertest(fastify.server)
-		.delete('/api/books/SOMEWRONGID')
-		.expect(404)
-		.expect('Content-Type', 'application/json; charset=utf-8');
+		let response = null;
+		response = await fastify.inject({
+			method: 'PUT',
+			url: '/api/books/' + bookFromDb.id,
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			payload: JSON.stringify({ title: 'The best book updated', isbn: 'The best isbn updated' })
+		});
 
-	t.equal(response.status, 404);
-});
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: 'The best book updated', isbn: 'The best isbn updated', author: '' + bookFromDb.author.id }, "PUT api ok");
+		t.match(response.json(), { author: '' + bookFromDb.author.id }, "Author still refs to original");
+	});
 
-test('POST item and return populated response test', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'Another One'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
+	test('PUT single item 404', async t => {
+		let response = null;
+		response = await fastify.inject({
+			method: 'PUT',
+			url: '/api/books/SOMEWRONGID',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			body: { title: 'The best book updated', isbn: 'The best isbn updated'}
+		});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.post('/api/books?populate=author')
-		.send({title: 'The populated book', isbn: 'isbn', author: ''+bookFromDb.author.id})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		t.equal(response.statusCode, 404, 'Response status code is 404');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+	});
 
-	t.match(response.body, {title: 'The populated book', isbn: 'isbn'}, "POST api ok");
-	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
-	t.match(response.body.author, {_id: ''+bookFromDb.author.id}, "Populated author id is ok");
-});
+	test('DELETE item test', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The best book updated' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+		let author = bookFromDb.author;
 
-test('PUT item and return populated response test', async t => {
-	let bookFromDb = await mongooseConnection.models.Book.findOne({title: 'The populated book'});
-	await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
-	// await bookFromDb.populate('author').execPopulate();
+		let response = null;
+		response = await fastify.inject({
+			method: 'DELETE',
+			url: '/api/books/' + bookFromDb.id,
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
-	let response = null;
-	response = await supertest(fastify.server)
-		.put('/api/books/'+bookFromDb.id+"?populate=author")
-		.send({title: 'The populated book updated', isbn: 'isbn updated'})
-		.expect(200)
-		.expect('Content-Type', 'application/json; charset=utf-8')
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { success: true }, "DELETE api ok");
 
-	t.match(response.body, {title: 'The populated book updated', isbn: 'isbn updated'}, "PUT api ok");
-	t.match(response.body.author, {firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName}, "Populated author is ok");
-});
+		response = await fastify.inject({
+			method: 'GET',
+			url: '/api/authors/' + bookFromDb.author.id + '/books',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
 
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.equal(response.json().total, 1, 'API returns 1 refed books after delete');
+		t.equal(response.json().items.length, 1, 'API returns 1 refed books after delete');
+	});
 
-test('teardown', async t=>{
-	await fastify.close();
-	await mongooseConnection.close();
-});
+	test('DELETE single item 404', async t => {
+		let response = null;
+		response = await fastify.inject({
+			method: 'DELETE',
+			url: '/api/books/SOMEWRONGID',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' }
+		});
+
+		t.equal(response.statusCode, 404, 'Response status code is 404');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+	});
+
+	test('POST item and return populated response test', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'Another One' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+
+		let response = null;
+		response = await fastify.inject({
+			method: 'POST',
+			url: '/api/books?populate=author',
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			payload: JSON.stringify({ title: 'The populated book', isbn: 'isbn', author: '' + bookFromDb.author.id })
+		});
+
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: 'The populated book', isbn: 'isbn' }, "POST api ok");
+		t.match(response.json().author, { firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName }, "Populated author is ok");
+		t.match(response.json().author, { _id: '' + bookFromDb.author.id }, "Populated author id is ok");
+	});
+
+	test('PUT item and return populated response test', async t => {
+		let bookFromDb = await mongooseConnection.models.Book.findOne({ title: 'The populated book' });
+		await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+
+		let response = null;
+		response = await fastify.inject({
+			method: 'PUT',
+			url: '/api/books/' + bookFromDb.id + "?populate=author",
+			headers: { 'Content-Type': 'application/json; charset=utf-8' },
+			payload: JSON.stringify({ title: 'The populated book updated', isbn: 'isbn updated' })
+		});
+
+		t.equal(response.statusCode, 200, 'Response status code is 200');
+		t.equal(response.headers['content-type'], 'application/json; charset=utf-8', 'Response content type is correct');
+		t.match(response.json(), { title: 'The populated book updated', isbn: 'isbn updated' }, "PUT api ok");
+		t.match(response.json().author, { firstName: bookFromDb.author.firstName, lastName: bookFromDb.author.lastName }, "Populated author is ok");
+	});
+
+	test('teardown', async t => {
+		await fastify.close();
+		await mongooseConnection.close();	});
+
