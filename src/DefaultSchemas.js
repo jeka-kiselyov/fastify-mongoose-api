@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-const defaultSchemas = (modelName) => {
+const defaultSchemas = modelName => {
     return {
         routeGet: {
             summary: 'Get details of single ' + modelName,
@@ -10,23 +10,23 @@ const defaultSchemas = (modelName) => {
                 properties: {
                     id: {
                         type: 'string',
-                        description: 'Unique identifier of ' + modelName,
-                    },
-                },
+                        description: 'Unique identifier of ' + modelName
+                    }
+                }
             },
             querystring: {
                 type: 'object',
                 properties: {
                     populate: {
                         type: 'string',
-                        description: 'Population options of mongoose',
+                        description: 'Population options of mongoose'
                     }
                 }
             },
             response: {
                 404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' },
-            },
+                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+            }
         },
         routePost: {
             summary: 'Create new ' + modelName,
@@ -36,13 +36,13 @@ const defaultSchemas = (modelName) => {
                 properties: {
                     populate: {
                         type: 'string',
-                        description: 'Population options of mongoose',
+                        description: 'Population options of mongoose'
                     }
                 }
             },
             response: {
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' },
-            },
+                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+            }
         },
         routeList: {
             summary: 'List ' + modelName,
@@ -52,45 +52,46 @@ const defaultSchemas = (modelName) => {
                 properties: {
                     offset: {
                         type: 'number',
-                        description: 'Mongoose offset property',
+                        description: 'Mongoose offset property'
                     },
                     limit: {
                         type: 'number',
-                        description: 'Mongoose limit property',
+                        description: 'Mongoose limit property'
                     },
                     sort: {
                         type: 'string',
-                        description: 'Sort options of mongoose',
+                        description: 'Sort options of mongoose'
                     },
                     filter: {
                         type: 'string',
-                        description: 'Simple filtering by field value',
+                        description: 'Simple filtering by field value'
                     },
                     where: {
                         type: 'string',
-                        description: 'Mongoose where object',
+                        description: 'Mongoose where object'
                     },
                     match: {
                         type: 'string',
-                        description: 'Use it for pattern matching',
+                        description: 'Use it for pattern matching'
                     },
                     search: {
                         type: 'string',
-                        description: 'Performs search by full text mongodb indexes',
+                        description:
+                            'Performs search by full text mongodb indexes'
                     },
                     projection: {
                         type: 'string',
-                        description: 'Projection options of mongoose',
+                        description: 'Projection options of mongoose'
                     },
                     populate: {
                         type: 'string',
-                        description: 'Population options of mongoose',
+                        description: 'Population options of mongoose'
                     }
-                },
+                }
             },
             response: {
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' },
-            },
+                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+            }
         },
         routePut: {
             summary: 'Replace existing ' + modelName,
@@ -100,23 +101,23 @@ const defaultSchemas = (modelName) => {
                 properties: {
                     id: {
                         type: 'string',
-                        description: 'Unique identifier of ' + modelName,
-                    },
-                },
+                        description: 'Unique identifier of ' + modelName
+                    }
+                }
             },
             querystring: {
                 type: 'object',
                 properties: {
                     populate: {
                         type: 'string',
-                        description: 'Population options of mongoose',
+                        description: 'Population options of mongoose'
                     }
                 }
             },
             response: {
                 404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' },
-            },
+                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+            }
         },
         routePatch: {
             summary: 'Update existing ' + modelName,
@@ -126,24 +127,23 @@ const defaultSchemas = (modelName) => {
                 properties: {
                     id: {
                         type: 'string',
-                        description: 'Unique identifier of ' + modelName,
-                    },
-                },
+                        description: 'Unique identifier of ' + modelName
+                    }
+                }
             },
             querystring: {
                 type: 'object',
                 properties: {
                     populate: {
                         type: 'string',
-                        description: 'Population options of mongoose',
+                        description: 'Population options of mongoose'
                     }
                 }
             },
             response: {
                 404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' },
-            },
-
+                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+            }
         },
         routeDelete: {
             summary: 'Delete existing ' + modelName,
@@ -153,9 +153,9 @@ const defaultSchemas = (modelName) => {
                 properties: {
                     id: {
                         type: 'string',
-                        description: 'Unique identifier of ' + modelName,
-                    },
-                },
+                        description: 'Unique identifier of ' + modelName
+                    }
+                }
             },
             response: {
                 200: {
@@ -163,15 +163,15 @@ const defaultSchemas = (modelName) => {
                     type: 'object',
                     properties: {
                         acknowledged: { type: 'boolean' },
-                        deletedCount: { type: 'number' },
-                    },
+                        deletedCount: { type: 'number' }
+                    }
                 },
                 404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' },
+                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         }
-    }
-}
+    };
+};
 
 const responseSchema404 = {
     $id: 'MongooseApiDefErrRespSchemas404',
@@ -180,9 +180,9 @@ const responseSchema404 = {
     properties: {
         error: { type: 'string', example: 'Route Not Found' },
         message: { type: 'string', example: 'Not Found' },
-        statusCode: { type: 'integer', example: 404 },
-    },
-}
+        statusCode: { type: 'integer', example: 404 }
+    }
+};
 
 const responseSchema500 = {
     $id: 'MongooseApiDefErrRespSchemas500',
@@ -191,8 +191,8 @@ const responseSchema500 = {
     properties: {
         error: { type: 'string' },
         message: { type: 'string' },
-        statusCode: { type: 'integer', example: 500 },
-    },
-}
+        statusCode: { type: 'integer', example: 500 }
+    }
+};
 
-module.exports = {defaultSchemas, responseSchema404, responseSchema500}
+module.exports = { defaultSchemas, responseSchema404, responseSchema500 };
