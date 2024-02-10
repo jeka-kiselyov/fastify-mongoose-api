@@ -5,7 +5,9 @@
   "main": "fastify-mongoose-api.js",
   "scripts": {
     "test": "tap -j1  --allow-incomplete-coverage ./test/*.test.js",
-    "coverage": "tap -j1 ./test/*.test.js"
+    "coverage": "tap -j1 ./test/*.test.js",
+    "lint": "eslint \"src/**/*.[jt]s?(x)\" \"test/**/*.?(c)[jt]s\"",
+    "lint:fix": "npm run lint -- --fix"
   },
   "repository": "https://github.com/jeka-kiselyov/fastify-mongoose-api.git",
   "keywords": [
@@ -28,11 +30,14 @@
   },
   "devDependencies": {
     "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
     "grunt": "^1.6.1",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-env": "^1.0.1",
     "grunt-eslint": "^24.3.0",
     "grunt-tape": "^0.1.0",
+    "prettier": "^3.2.5",
     "supertest": "^6.3.4",
     "tap": "^18.7.0"
   }
