@@ -1,12 +1,12 @@
 name: ci
-#on: [push, pull_request, workflow_dispatch] # disabled for debug
-on: [workflow_dispatch] # disabled for debug
+on: [push, pull_request, workflow_dispatch] # disabled for debug
+#on: [workflow_dispatch] # disabled for debug
 jobs:
   ci:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [18]
         mongodb-version: [4.4, 5.0, 6.0]
     steps:
       - name: Git checkout
@@ -29,7 +29,3 @@ jobs:
         run: npm run test
         env:
           DATABASE_URI: mongodb://localhost:27017/test
-      #- name: coveralls
-      #  uses: coverallsapp/github-action@master
-      #  with:
-      #    github-token: ${{ secrets.GITHUB_TOKEN }}
