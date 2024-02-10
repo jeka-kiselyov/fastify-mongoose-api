@@ -145,7 +145,7 @@ test('initialization of API server', async t => {
         'API path is composed with prefix + collectionName'
     );
 
-    await fastify.listen(FASTIFY_PORT);
+    await fastify.listen({ port: FASTIFY_PORT });
 });
 
 test('GET collection endpoints', async t => {
