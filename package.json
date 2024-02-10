@@ -38,7 +38,6 @@
     "grunt-eslint": "^24.3.0",
     "grunt-tape": "^0.1.0",
     "prettier": "^3.2.5",
-    "supertest": "^6.3.4",
     "tap": "^18.7.0"
   }
 }
