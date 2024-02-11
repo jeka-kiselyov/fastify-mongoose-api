@@ -1,9 +1,8 @@
 # Fastify plugin to expose API for Mongoose MongoDB models
 
 [![npm package](https://img.shields.io/npm/v/fastify-mongoose-api.svg)](http://npmjs.org/package/fastify-mongoose-api)
-[![Build Status](https://travis-ci.org/jeka-kiselyov/fastify-mongoose-api.svg?branch=master)](https://travis-ci.org/jeka-kiselyov/fastify-mongoose-api)
+[![Build workflow](https://github.com/jeka-kiselyov/fastify-mongoose-api/actions/workflows/build.yml/badge.svg)](https://github.com/jeka-kiselyov/fastify-mongoose-api/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jeka-kiselyov/fastify-mongoose-api/badge.svg?branch=master)](https://coveralls.io/github/jeka-kiselyov/fastify-mongoose-api?branch=master)
-[![Dependencies Status](https://david-dm.org/jeka-kiselyov/fastify-mongoose-api/status.svg)](https://david-dm.org/jeka-kiselyov/fastify-mongoose-api)
 
 If you are using [Fastify](https://github.com/fastify/fastify) as your server and [Mongoose](https://github.com/Automattic/mongoose) as your ODM, **fastify-mongoose-api** is the easiest solution to run API server for your models. **fastify-mongoose-api** generates REST routes with refs subroutes like `/api/author/AUTHORID/books` and `/api/books/BOOKID/author` based on MongoDB Mongoose models definitions with few lines of code.
 
