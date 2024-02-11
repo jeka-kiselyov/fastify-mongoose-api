@@ -279,8 +279,20 @@ Pass mongo where object as `where` property JSON-encoded string and it will be a
 
 Plugin uses simple sanitation, list of allowed operators:
 ```javascript
-  '$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists'
+  '$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$ne', '$nin', '$and', '$not', '$nor', '$or', '$exists', '$regex', '$options'
 ```
+For `$regex/$options` it's supported only the 
+
+```json
+{ "<field>": { "$regex": "pattern", "$options": "<options>" } }
+```
+
+[syntax](https://www.mongodb.com/docs/manual/reference/operator/query/regex/#syntax). Using 
+
+```json
+{ "<field>": { "$regex": /pattern/, ...
+```
+syntax it's not supported and produce an error.
 
 See [Mongo operators docs](https://www.mongodb.com/docs/manual/reference/operator/query/#query-and-projection-operators)
 And plugin [test case](https://github.com/jeka-kiselyov/fastify-mongoose-api/blob/master/test/complex_where.test.js)

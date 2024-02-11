@@ -185,7 +185,9 @@ class APIRouter {
                 '$not',
                 '$nor',
                 '$or',
-                '$exists'
+                '$exists',
+                '$regex',
+                '$options'
             ];
             const sanitize = function (v) {
                 if (v instanceof Object) {
@@ -194,7 +196,7 @@ class APIRouter {
                             /^\$/.test(key) &&
                             allowedMethods.indexOf(key) === -1
                         ) {
-                            delete v[key];
+                            throw new Error('Invalid where method: ' + key);
                         } else {
                             sanitize(v[key]);
                         }
