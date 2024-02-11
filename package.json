@@ -20,6 +20,13 @@
     "crud"
   ],
   "author": "Jeka Kiselyov",
+  "contributors": [
+    {
+      "name": "Emiliano Bruni",
+      "url": "https://github.com/EmilianoBruni",
+      "author": true
+    }
+  ],
   "license": "MIT",
   "dependencies": {
     "fastify": "^4.26.0",
