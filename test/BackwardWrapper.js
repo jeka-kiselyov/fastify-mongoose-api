@@ -19,7 +19,6 @@ class BackwardWrapper {
         this.t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
 
         this.t.teardown(async () => {
-            console.log('Closing fastify server');
             await fastify.close();
         });
 
@@ -36,7 +35,6 @@ class BackwardWrapper {
         this.t.equal(this.conn.readyState, 1, 'Ready state is connected(==1)'); /// connected
 
         this.t.teardown(async () => {
-            console.log('Closing mongoose connection');
             await this.conn.close();
         });
     }
