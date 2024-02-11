@@ -22,8 +22,6 @@
   "author": "Jeka Kiselyov",
   "license": "MIT",
   "dependencies": {
-    "@fastify/formbody": "^7.4.0",
-    "debug": "^4.3.4",
     "fastify": "^4.26.0",
     "fastify-plugin": "^4.5.1",
     "mongoose": "^8.1.1"
