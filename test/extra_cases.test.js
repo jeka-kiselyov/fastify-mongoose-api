@@ -5,23 +5,13 @@ const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
 const t = require('tap');
 const { test } = t;
 
-const Fastify = require('fastify');
 const mongoose = require('mongoose');
-
-const MONGODB_URL =
-    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
-
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-let mongooseConnection = null;
-let fastify = null;
+const bw = new BackwardWrapper(t);
 
-test('mongoose db initialization', async t => {
-    t.plan(2);
-
-    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+test('mongoose db initialization', async () => {
+    await bw.createConnection();
 });
 
 test('schema initialization', async t => {
@@ -45,8 +35,8 @@ test('schema initialization', async t => {
         return [];
     };
 
-    mongooseConnection.model('Test', schema);
-    t.ok(mongooseConnection.models.Test);
+    bw.conn.model('Test', schema);
+    t.ok(bw.conn.models.Test);
 });
 
 test('does not let initialize plugin class directly', async t => {
@@ -61,21 +51,9 @@ test('does not let initialize plugin class directly', async t => {
     });
 });
 
-test('initialization of API server', async t => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models,
+test('initialization of API server', async () => {
+    await bw.createServer({
+        models: bw.conn.models,
         setDefaults: false
     });
-
-    await fastify.ready();
-
-    t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
-});
-
-test('teardown', async () => {
-    await fastify.close();
-    await mongooseConnection.close();
 });

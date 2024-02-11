@@ -1,27 +1,15 @@
 'use strict';
 
-const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
-
 const t = require('tap');
 const { test } = t;
 
-const Fastify = require('fastify');
 const mongoose = require('mongoose');
-
-const MONGODB_URL =
-    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
-
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-let mongooseConnection = null;
-let fastify = null;
+const bw = new BackwardWrapper(t);
 
-test('mongoose db initialization', async t => {
-    t.plan(2);
-
-    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+test('mongoose db initialization', async () => {
+    await bw.createConnection();
 });
 
 test('schema initialization', async t => {
@@ -42,7 +30,7 @@ test('schema initialization', async t => {
         biography: 'text'
     }); /// you can use wildcard here too: https://stackoverflow.com/a/28775709/1119169
 
-    mongooseConnection.model('Author', authorSchema);
+    bw.conn.model('Author', authorSchema);
 
     const bookSchema = mongoose.Schema({
         title: String,
@@ -57,53 +45,50 @@ test('schema initialization', async t => {
         }
     });
 
-    mongooseConnection.model('Book', bookSchema);
+    bw.conn.model('Book', bookSchema);
 
-    t.ok(mongooseConnection.models.Author);
-    t.ok(mongooseConnection.models.Book);
+    t.ok(bw.conn.models.Author);
+    t.ok(bw.conn.models.Book);
 });
 
 test('clean up test collections', async () => {
-    await mongooseConnection.models.Author.deleteMany({}).exec();
-    await mongooseConnection.models.Book.deleteMany({}).exec();
+    await bw.conn.models.Author.deleteMany({}).exec();
+    await bw.conn.models.Book.deleteMany({}).exec();
 });
 
 test('schema ok', async t => {
-    let author = new mongooseConnection.models.Author();
+    let author = new bw.conn.models.Author();
     author.firstName = 'Jay';
     author.lastName = 'Kay';
     author.biography = 'Lived. Died.';
 
     await author.save();
 
-    let book = new mongooseConnection.models.Book();
+    let book = new bw.conn.models.Book();
     book.title = 'The best book';
     book.isbn = 'The best isbn';
     book.author = author;
 
     await book.save();
 
-    let authorFromDb = await mongooseConnection.models.Author.findOne({
+    let authorFromDb = await bw.conn.models.Author.findOne({
         firstName: 'Jay'
     }).exec();
-    let bookFromDb = await mongooseConnection.models.Book.findOne({
+    let bookFromDb = await bw.conn.models.Book.findOne({
         title: 'The best book'
     }).exec();
 
     t.ok(authorFromDb);
     t.ok(bookFromDb);
 
-    await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+    await bw.populateDoc(bookFromDb.populate('author'));
 
     t.equal('' + bookFromDb.author._id, '' + authorFromDb._id);
 });
 
 test('initialization of API server', async t => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models,
+    await bw.createServer({
+        models: bw.conn.models,
         exposeVersionKey: false,
         exposeModelName: true,
         prefix: '/api/',
@@ -111,33 +96,30 @@ test('initialization of API server', async t => {
         methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
     });
 
-    await fastify.ready();
-
-    t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
     t.equal(
-        Object.keys(fastify.mongooseAPI.apiRouters).length,
+        Object.keys(bw.fastify.mongooseAPI.apiRouters).length,
         2,
         'There are 2 APIRoutes, one for each model'
     );
 
     t.equal(
-        fastify.mongooseAPI.apiRouters.Author.collectionName,
+        bw.fastify.mongooseAPI.apiRouters.Author.collectionName,
         'authors',
         'Collection name used in API path'
     );
     t.equal(
-        fastify.mongooseAPI.apiRouters.Book.collectionName,
+        bw.fastify.mongooseAPI.apiRouters.Book.collectionName,
         'books',
         'Collection name used in API path'
     );
 
     t.equal(
-        fastify.mongooseAPI.apiRouters.Author.path,
+        bw.fastify.mongooseAPI.apiRouters.Author.path,
         '/api/authors',
         'API path is composed with prefix + collectionName'
     );
     t.equal(
-        fastify.mongooseAPI.apiRouters.Book.path,
+        bw.fastify.mongooseAPI.apiRouters.Book.path,
         '/api/books',
         'API path is composed with prefix + collectionName'
     );
@@ -145,17 +127,10 @@ test('initialization of API server', async t => {
 
 test('GET collection endpoints', async t => {
     let response = null;
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/books'
     });
-
-    t.equal(response.statusCode, 200, 'API returns 200 status code');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'API returns correct content type'
-    );
 
     t.equal(response.json().total, 1, 'API returns 1 book');
     t.equal(
@@ -170,17 +145,10 @@ test('GET collection endpoints', async t => {
         'does not have version field'
     );
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors'
     });
-
-    t.equal(response.statusCode, 200, 'API returns 200 status code');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'API returns correct content type'
-    );
 
     t.equal(response.json().total, 1, 'API returns 1 author');
     t.equal(response.json().items.length, 1, 'API returns 1 author');
@@ -198,24 +166,16 @@ test('GET collection endpoints', async t => {
 });
 
 test('ModelName on populated', async t => {
-    let bookFromDb = await mongooseConnection.models.Book.findOne({
+    let bookFromDb = await bw.conn.models.Book.findOne({
         title: 'The best book'
     });
     // await bookFromDb.populate('author').execPopulate();
-    await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
+    await bw.populateDoc(bookFromDb.populate('author'));
 
-    let response = null;
-    response = await fastify.inject({
+    const response = await bw.inject(t, {
         method: 'GET',
         url: '/api/books/' + bookFromDb.id + '?populate=author'
     });
-
-    t.equal(response.statusCode, 200, 'API returns 200 status code');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'API returns correct content type'
-    );
 
     t.match(
         response.json(),
@@ -251,9 +211,4 @@ test('ModelName on populated', async t => {
         { __v: undefined },
         'populated does not have version field'
     );
-});
-
-test('teardown', async () => {
-    await fastify.close();
-    await mongooseConnection.close();
 });

@@ -1,20 +1,12 @@
 'use strict';
 
-const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
-
 const t = require('tap');
 const { test } = t;
 
-const Fastify = require('fastify');
 const mongoose = require('mongoose');
-
-const MONGODB_URL =
-    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
-
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-let mongooseConnection = null;
-let fastify = null;
+const bw = new BackwardWrapper(t);
 
 let schema = {
     firstName: String,
@@ -22,39 +14,30 @@ let schema = {
 };
 let _id = null;
 
-test('mongoose db initialization', async t => {
-    t.plan(2);
-
-    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+test('mongoose db initialization', async () => {
+    await bw.createConnection();
 });
 
 test('schema initialization', async t => {
     const authorSchema = mongoose.Schema(schema);
 
-    mongooseConnection.model('Author', authorSchema);
+    bw.conn.model('Author', authorSchema);
 
-    t.ok(mongooseConnection.models.Author);
+    t.ok(bw.conn.models.Author);
 });
 
 test('clean up test collections', async () => {
-    await mongooseConnection.models.Author.deleteMany({}).exec();
+    await bw.conn.models.Author.deleteMany({}).exec();
 });
 
 test('initialization of API server', async t => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models,
+    await bw.createServer({
+        models: bw.conn.models,
         setDefaults: true
     });
 
-    await fastify.ready();
-
     t.strictSame(
-        fastify.mongooseAPI._methods,
+        bw.fastify.mongooseAPI._methods,
         ['list', 'get', 'post', 'patch', 'put', 'delete'],
         'mongooseAPI defaults methods loaded'
     );
@@ -62,17 +45,11 @@ test('initialization of API server', async t => {
 
 test('POST item test', async t => {
     let response = null;
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'POST',
         url: '/api/authors',
         payload: { firstName: 'Hutin', lastName: 'Puylo' }
     });
-
-    t.equal(response.statusCode, 200, 'POST api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8'
-    );
 
     const responseBody = response.json();
     t.equal(responseBody.firstName, 'Hutin');
@@ -85,16 +62,10 @@ test('POST item test', async t => {
     _id = responseBody._id;
     t.ok(_id, '_id generated');
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors'
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8'
-    );
 
     t.match(
         response.json().items[0],
@@ -105,41 +76,32 @@ test('POST item test', async t => {
 });
 
 test('Shutdown API server', async () => {
-    await fastify.close();
+    await bw.fastify.close();
 });
 
 test('initialization of API server with limited methods', async t => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models,
+    await bw.createServer({
+        models: bw.conn.models,
         setDefaults: true,
         methods: ['list', 'get'] // read-only
     });
 
-    await fastify.ready();
-
     t.strictSame(
-        fastify.mongooseAPI._methods,
+        bw.fastify.mongooseAPI._methods,
         ['list', 'get'],
         'mongooseAPI custom methods loaded'
     );
 });
 
 test('POST item is invalid', async t => {
-    let response = null;
-    response = await fastify.inject({
-        method: 'POST',
-        url: '/api/authors',
-        payload: { firstName: 'Hutin', lastName: 'Puylo' }
-    });
-
-    t.equal(response.statusCode, 404, 'POST denied');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
+    const response = await bw.inject(
+        t,
+        {
+            method: 'POST',
+            url: '/api/authors',
+            payload: { firstName: 'Hutin', lastName: 'Puylo' }
+        },
+        404
     );
 
     t.match(
@@ -150,8 +112,7 @@ test('POST item is invalid', async t => {
 });
 
 test('GET is valid', async t => {
-    let response = null;
-    response = await fastify.inject({
+    const response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors/' + _id
     });
@@ -171,18 +132,10 @@ test('GET is valid', async t => {
 });
 
 test('LIST is valid', async t => {
-    let response = null;
-    response = await fastify.inject({
+    const response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors'
     });
-
-    t.equal(response.statusCode, 200, 'GET is valid');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.match(
         response.json().items[0],
@@ -190,9 +143,4 @@ test('LIST is valid', async t => {
         'Listed same'
     );
     t.equal(response.json().total, 1, 'There are author now');
-});
-
-test('teardown', async () => {
-    await fastify.close();
-    await mongooseConnection.close();
 });
