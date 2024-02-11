@@ -1,21 +1,68 @@
 const mongoose = require('mongoose');
 
 class BackwardWrapper {
-    static async createConnection(MONGODB_URL) {
-        const createConn = mongoose.createConnection(MONGODB_URL);
-        if (createConn.asPromise) {
-            return await createConn.asPromise();
-        } else {
-            return await createConn;
-        }
+    constructor(t) {
+        this.MONGODB_URL =
+            process.env.DATABASE_URI ||
+            'mongodb://127.0.0.1/fastifymongooseapitest';
+        this.t = t;
     }
 
-    static async populateDoc(populated) {
+    async createServer(pluginConfig = {}) {
+        const Fastify = require('fastify');
+        const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
+
+        const fastify = Fastify();
+        fastify.register(fastifyMongooseAPI, pluginConfig);
+        await fastify.ready();
+
+        this.t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
+
+        this.t.teardown(async () => {
+            console.log('Closing fastify server');
+            await fastify.close();
+        });
+
+        this.fastify = fastify;
+        return fastify;
+    }
+
+    async createConnection() {
+        this.conn = await mongoose
+            .createConnection(this.MONGODB_URL)
+            .asPromise();
+
+        this.t.ok(this.conn);
+        this.t.equal(this.conn.readyState, 1, 'Ready state is connected(==1)'); /// connected
+
+        this.t.teardown(async () => {
+            console.log('Closing mongoose connection');
+            await this.conn.close();
+        });
+    }
+
+    async populateDoc(populated) {
         if (populated.execPopulate) {
             return await populated.execPopulate();
         } else {
             return await populated;
         }
+    }
+
+    async inject(t, injectOptions, expectedStatusCode = 200) {
+        const response = await this.fastify.inject(injectOptions);
+
+        t.equal(
+            response.statusCode,
+            expectedStatusCode,
+            `Status code is ${expectedStatusCode}`
+        );
+        t.equal(
+            response.headers['content-type'],
+            'application/json; charset=utf-8',
+            'Content-Type is correct'
+        );
+        return response;
     }
 }
 
