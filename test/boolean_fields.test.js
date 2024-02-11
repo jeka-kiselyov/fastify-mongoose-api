@@ -1,28 +1,15 @@
 'use strict';
 
-const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
-
 const t = require('tap');
 const { test } = t;
 
-const Fastify = require('fastify');
 const mongoose = require('mongoose');
-
-// eslint-disable-next-line no-undef
-const MONGODB_URL =
-    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
-
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-let mongooseConnection = null;
-let fastify = null;
+const bw = new BackwardWrapper(t);
 
-test('mongoose db initialization', async t => {
-    t.plan(2);
-
-    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+test('mongoose db initialization', async () => {
+    await bw.createConnection();
 });
 
 test('schema initialization', async t => {
@@ -31,27 +18,21 @@ test('schema initialization', async t => {
         aGoodMan: Boolean
     });
 
-    mongooseConnection.model('BooleanTest', schema);
-    t.ok(mongooseConnection.models.BooleanTest);
+    bw.conn.model('BooleanTest', schema);
+    t.ok(bw.conn.models.BooleanTest);
 });
 
 test('clean up test collections', async () => {
-    await mongooseConnection.models.BooleanTest.deleteMany({}).exec();
+    await bw.conn.models.BooleanTest.deleteMany({}).exec();
 });
 
 test('initialization of API server', async t => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models
+    await bw.createServer({
+        models: bw.conn.models
     });
 
-    await fastify.ready();
-
-    t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
     t.equal(
-        fastify.mongooseAPI.apiRouters.BooleanTest.collectionName,
+        bw.fastify.mongooseAPI.apiRouters.BooleanTest.collectionName,
         'booleantests',
         'Collection name used in API path'
     );
@@ -59,32 +40,18 @@ test('initialization of API server', async t => {
 
 test('POST item test', async t => {
     let response = null;
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'POST',
         url: '/api/booleantests',
         payload: { name: 'Good', aGoodMan: true }
     });
 
-    t.equal(response.statusCode, 200, 'POST api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
-
     t.match(response.json(), { name: 'Good', aGoodMan: true }, 'POST api ok');
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests'
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 1, 'There is one good man');
 });
@@ -92,32 +59,18 @@ test('POST item test', async t => {
 test('POST item false test', async t => {
     let response = null;
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'POST',
         url: '/api/booleantests',
         body: { name: 'Bad', aGoodMan: false }
     });
 
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
-
     t.match(response.json(), { name: 'Bad', aGoodMan: false }, 'POST api ok');
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests'
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 2, 'There are 2 men');
 });
@@ -125,17 +78,10 @@ test('POST item false test', async t => {
 test('Update to false test', async t => {
     let response = null;
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests'
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 2, 'There re 2 men');
 
@@ -150,37 +96,21 @@ test('Update to false test', async t => {
 
     t.ok(foundGood);
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'PUT',
         url: '/api/booleantests/' + goodId,
         payload: { aGoodMan: false }
     });
 
-    t.equal(response.statusCode, 200, 'PUT api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
-
     t.match(response.json(), { name: 'Good', aGoodMan: false }, 'PUT api ok');
 });
 
 test('GET collection filtering', async t => {
-    let response = null;
-
-    response = await fastify.inject({
+    const response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests',
         query: { filter: 'aGoodMan=0' }
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 2, 'API returns 2 filtered men');
     t.equal(response.json().items.length, 2, 'API returns 2 filtered men');
@@ -189,17 +119,10 @@ test('GET collection filtering', async t => {
 test('And back to true', async t => {
     let response = null;
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests'
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 2, 'There re 2 men');
 
@@ -214,18 +137,11 @@ test('And back to true', async t => {
 
     t.ok(foundGood);
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'PUT',
         url: '/api/booleantests/' + goodId,
         payload: { aGoodMan: true }
     });
-
-    t.equal(response.statusCode, 200, 'PUT api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.match(response.json(), { name: 'Good', aGoodMan: true }, 'PUT api ok');
 });
@@ -233,18 +149,11 @@ test('And back to true', async t => {
 test('GET collection filtering', async t => {
     let response = null;
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests',
         query: { filter: 'aGoodMan=0' }
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 1, 'API returns 1 filtered man');
     t.equal(response.json().items.length, 1, 'API returns 1 filtered man');
@@ -256,20 +165,11 @@ test('GET collection filtering', async t => {
 });
 
 test('GET collection filtering', async t => {
-    let response = null;
-
-    response = await fastify.inject({
+    const response = await bw.inject(t, {
         method: 'GET',
         url: '/api/booleantests',
         query: { filter: 'aGoodMan=1' }
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.equal(response.json().total, 1, 'API returns 1 filtered man');
     t.equal(response.json().items.length, 1, 'API returns 1 filtered man');
@@ -278,9 +178,4 @@ test('GET collection filtering', async t => {
         { name: 'Good', aGoodMan: true },
         'Filtered author'
     );
-});
-
-test('teardown', async () => {
-    await fastify.close();
-    await mongooseConnection.close();
 });
