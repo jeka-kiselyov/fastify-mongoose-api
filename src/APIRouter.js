@@ -1,4 +1,3 @@
-const debug = require('debug')('fastify-mongoose-api');
 const { defaultSchemas } = require('./DefaultSchemas');
 
 const capFL = string => string.charAt(0).toUpperCase() + string.slice(1);
@@ -67,13 +66,6 @@ class APIRouter {
                 );
             }
         }
-
-        debug(
-            'set up API path',
-            path,
-            'sub routes: ',
-            Object.keys(this._apiSubRoutesFunctions)
-        );
     }
 
     _populateSchema(funcName, optSchema) {
