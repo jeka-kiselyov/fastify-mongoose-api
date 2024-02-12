@@ -1,34 +1,18 @@
 'use strict';
 
-const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
-
 const t = require('tap');
 const { test } = t;
 
-const Fastify = require('fastify');
 const mongoose = require('mongoose');
-
-const MONGODB_URL =
-    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
-
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-let mongooseConnection = null;
-let fastify = null;
+const bw = new BackwardWrapper(t);
 
-test('mongoose db initialization', async t => {
-    t.plan(2);
-
-    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+test('mongoose db initialization', async () => {
+    await bw.createConnection();
 });
 
 test('schema initialization', async t => {
-    // t.plan(2);
-
-    // const biographyEpochSchema = mongoose.Schema({ title: String, year: Number });
-
     const authorSchema = mongoose.Schema({
         firstName: String,
         lastName: String,
@@ -39,37 +23,30 @@ test('schema initialization', async t => {
         }
     });
 
-    mongooseConnection.model('Author', authorSchema);
+    bw.conn.model('Author', authorSchema);
 
-    t.ok(mongooseConnection.models.Author);
+    t.ok(bw.conn.models.Author);
 });
 
 test('clean up test collections', async () => {
-    await mongooseConnection.models.Author.deleteMany({}).exec();
+    await bw.conn.models.Author.deleteMany({}).exec();
 });
 
 test('initialization of API server', async t => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models,
+    await bw.createServer({
+        models: bw.conn.models,
         prefix: '/api/',
         setDefaults: true,
         methods: ['list', 'get', 'post', 'patch', 'put', 'delete', 'options']
     });
 
-    await fastify.ready();
-
-    t.ok(fastify.mongooseAPI, 'mongooseAPI decorator is available');
-
     t.equal(
-        fastify.mongooseAPI.apiRouters.Author.collectionName,
+        bw.fastify.mongooseAPI.apiRouters.Author.collectionName,
         'authors',
         'Collection name used in API path'
     );
     t.equal(
-        fastify.mongooseAPI.apiRouters.Author.path,
+        bw.fastify.mongooseAPI.apiRouters.Author.path,
         '/api/authors',
         'API path is composed with prefix + collectionName'
     );
@@ -77,7 +54,7 @@ test('initialization of API server', async t => {
 
 test('POST item test', async t => {
     let response = null;
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'POST',
         url: '/api/authors',
         payload: {
@@ -87,13 +64,6 @@ test('POST item test', async t => {
             'biography.born': '1960'
         }
     });
-
-    t.equal(response.statusCode, 200, 'POST api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.match(
         JSON.parse(response.payload),
@@ -115,17 +85,10 @@ test('POST item test', async t => {
         'POST api ok'
     );
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors'
     });
-
-    t.equal(response.statusCode, 200, 'GET api ok');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type is correct'
-    );
 
     t.match(
         response.json().items[0],
@@ -140,22 +103,16 @@ test('POST item test', async t => {
 });
 
 test('PUT item test', async t => {
-    let authorFromDb = await mongooseConnection.models.Author.findOne({
+    let authorFromDb = await bw.conn.models.Author.findOne({
         firstName: 'Hutin'
     });
     // await BackwardWrapper.populateDoc(bookFromDb.populate('author'));
 
-    const response = await fastify.inject({
+    const response = await bw.inject(t, {
         method: 'PUT',
         url: '/api/authors/' + authorFromDb.id,
         payload: { lastName: 'Chuvachello', 'biography.born': 1961 }
     });
-
-    t.equal(response.statusCode, 200);
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8'
-    );
 
     t.match(
         response.json(),
@@ -166,9 +123,4 @@ test('PUT item test', async t => {
         },
         'PUT api ok'
     );
-});
-
-test('teardown', async () => {
-    await fastify.close();
-    await mongooseConnection.close();
 });

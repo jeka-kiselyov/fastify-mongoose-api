@@ -1,20 +1,12 @@
 'use strict';
 
-const fastifyMongooseAPI = require('../fastify-mongoose-api.js');
-
 const t = require('tap');
 const { test } = t;
 
-const Fastify = require('fastify');
 const mongoose = require('mongoose');
-
-const MONGODB_URL =
-    process.env.DATABASE_URI || 'mongodb://127.0.0.1/fastifymongooseapitest';
-
 const BackwardWrapper = require('./BackwardWrapper.js');
 
-let mongooseConnection = null;
-let fastify = null;
+const bw = new BackwardWrapper(t);
 
 let collection = 'authors';
 
@@ -113,54 +105,39 @@ let schema_full = {
     routeDelete: {}
 };
 
-test('mongoose db initialization', async t => {
-    mongooseConnection = await BackwardWrapper.createConnection(MONGODB_URL);
-    t.ok(mongooseConnection);
-    t.equal(mongooseConnection.readyState, 1, 'Ready state is connected(==1)'); /// connected
+test('mongoose db initialization', async () => {
+    await bw.createConnection();
 });
 
 test('schema initialization', async t => {
     const authorSchema = mongoose.Schema(schema_base.schema);
-    mongooseConnection.model('Author', authorSchema);
-    t.ok(mongooseConnection.models.Author);
+    bw.conn.model('Author', authorSchema);
+    t.ok(bw.conn.models.Author);
 });
 
 // base, empty, with_ref should have old working mode
 
 //[schema_base, schema_empty, schema_with_ref].forEach(schema => {
 [schema_base, schema_empty, schema_with_ref].forEach(schema => {
-    let fastify;
-
     test('clean up test collections', async () => {
-        await mongooseConnection.models.Author.deleteMany({}).exec();
+        await bw.conn.models.Author.deleteMany({}).exec();
     });
 
     test('initialization of API server', async () => {
-        ///// setting up the server
-        fastify = Fastify();
-
-        fastify.register(fastifyMongooseAPI, {
-            models: mongooseConnection.models,
+        await bw.createServer({
+            models: bw.conn.models,
             setDefaults: true,
             schemas: [schema]
         });
-
-        await fastify.ready();
     });
 
     test('POST item test', async t => {
         let response = null;
-        response = await fastify.inject({
+        response = await bw.inject(t, {
             method: 'POST',
             url: '/api/authors',
             payload: { firstName: 'Hutin', lastName: 'Puylo' }
         });
-
-        t.equal(response.statusCode, 200, 'POST api ok');
-        t.equal(
-            response.headers['content-type'],
-            'application/json; charset=utf-8'
-        );
 
         t.match(
             response.json(),
@@ -168,16 +145,10 @@ test('schema initialization', async t => {
             'POST api ok'
         );
 
-        response = await fastify.inject({
+        response = await bw.inject(t, {
             method: 'GET',
             url: '/api/authors'
         });
-
-        t.equal(response.statusCode, 200, 'GET api ok');
-        t.equal(
-            response.headers['content-type'],
-            'application/json; charset=utf-8'
-        );
 
         t.match(
             response.json().items[0],
@@ -188,8 +159,7 @@ test('schema initialization', async t => {
     });
 
     test('NO validation so, also a field is valid', async t => {
-        let response = null;
-        response = await fastify.inject({
+        const response = await bw.inject(t, {
             method: 'POST',
             url: '/api/authors',
             payload: {
@@ -197,18 +167,12 @@ test('schema initialization', async t => {
             }
         });
 
-        t.equal(response.statusCode, 200, 'POST api ok');
-        t.equal(
-            response.headers['content-type'],
-            'application/json; charset=utf-8'
-        );
-
         t.match(response.json(), { firstName: 'Hutin' }, 'POST api ok');
     });
 
     test('POST valid birthday', async t => {
         let response = null;
-        response = await fastify.inject({
+        response = await bw.inject(t, {
             method: 'POST',
             url: '/api/authors',
             payload: {
@@ -218,11 +182,6 @@ test('schema initialization', async t => {
             }
         });
 
-        t.equal(response.statusCode, 200, 'POST api ok');
-        t.equal(
-            response.headers['content-type'],
-            'application/json; charset=utf-8'
-        );
         t.match(
             response.json(),
             {
@@ -233,16 +192,10 @@ test('schema initialization', async t => {
             'POST api ok'
         );
 
-        response = await fastify.inject({
+        response = await bw.inject(t, {
             method: 'GET',
             url: '/api/authors'
         });
-
-        t.equal(response.statusCode, 200, 'GET api ok');
-        t.equal(
-            response.headers['content-type'],
-            'application/json; charset=utf-8'
-        );
 
         t.match(
             response.json().items[2],
@@ -257,18 +210,19 @@ test('schema initialization', async t => {
     });
 
     test('POST invalid birthday', async t => {
-        let response = null;
-        response = await fastify.inject({
-            method: 'POST',
-            url: '/api/authors',
-            payload: {
-                firstName: 'Hutin',
-                lastName: 'Puylo',
-                birthday: '1969-30-06'
-            }
-        });
-
-        t.equal(response.statusCode, 500, 'Internal server error');
+        const response = await bw.inject(
+            t,
+            {
+                method: 'POST',
+                url: '/api/authors',
+                payload: {
+                    firstName: 'Hutin',
+                    lastName: 'Puylo',
+                    birthday: '1969-30-06'
+                }
+            },
+            500
+        );
 
         t.type(response.json().message, 'string');
         // it may be a simple:
@@ -284,39 +238,31 @@ test('schema initialization', async t => {
     });
 
     test('Shutdown API server', async () => {
-        await fastify.close();
+        await bw.fastify.close();
     });
 });
 
 test('clean up test collections', async () => {
-    await mongooseConnection.models.Author.deleteMany({}).exec();
+    await bw.conn.models.Author.deleteMany({}).exec();
 });
 
 test('initialization of API server with validation', async () => {
-    ///// setting up the server
-    fastify = Fastify();
-
-    fastify.register(fastifyMongooseAPI, {
-        models: mongooseConnection.models,
+    await bw.createServer({
+        models: bw.conn.models,
         setDefaults: true,
         schemas: [schema_full]
     });
-
-    await fastify.ready();
 });
 
 test('Check required validation', async t => {
-    let response = null;
-    response = await fastify.inject({
-        method: 'POST',
-        url: '/api/authors',
-        payload: { firstName: 'Hutin' }
-    });
-
-    t.equal(
-        response.statusCode,
-        400,
-        'POST api with missing required property should return 400'
+    const response = await bw.inject(
+        t,
+        {
+            method: 'POST',
+            url: '/api/authors',
+            payload: { firstName: 'Hutin' }
+        },
+        400
     );
 
     t.match(
@@ -328,7 +274,7 @@ test('Check required validation', async t => {
 
 test('POST valid birthday', async t => {
     let response = null;
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'POST',
         url: '/api/authors',
         payload: {
@@ -338,29 +284,16 @@ test('POST valid birthday', async t => {
         }
     });
 
-    t.equal(response.statusCode, 200, 'POST api should return 200');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type should be application/json; charset=utf-8'
-    );
     t.match(
         response.json(),
         { firstName: 'Hutin', lastName: 'Puylo', birthday: '1969-07-06' },
         'POST api ok'
     );
 
-    response = await fastify.inject({
+    response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors'
     });
-
-    t.equal(response.statusCode, 200, 'GET api should return 200');
-    t.equal(
-        response.headers['content-type'],
-        'application/json; charset=utf-8',
-        'Content-Type should be application/json; charset=utf-8'
-    );
 
     t.match(
         response.json().items[0],
@@ -372,21 +305,20 @@ test('POST valid birthday', async t => {
 
 test('POST invalid birthday', async t => {
     let response = null;
-    response = await fastify.inject({
-        method: 'POST',
-        url: '/api/authors',
-        payload: {
-            firstName: 'Hutin',
-            lastName: 'Puylo',
-            birthday: '1969-30-06'
-        }
-    });
-
-    t.equal(
-        response.statusCode,
-        400,
-        'POST api with invalid birthday should return 400'
+    response = await bw.inject(
+        t,
+        {
+            method: 'POST',
+            url: '/api/authors',
+            payload: {
+                firstName: 'Hutin',
+                lastName: 'Puylo',
+                birthday: '1969-30-06'
+            }
+        },
+        400
     );
+
     t.equal(
         response.headers['content-type'],
         'application/json; charset=utf-8',
@@ -397,9 +329,4 @@ test('POST invalid birthday', async t => {
         'body/birthday must match format "date"',
         'POST api ok'
     );
-});
-
-test('teardown', async () => {
-    await fastify.close();
-    await mongooseConnection.close();
 });
