@@ -1,4 +1,3 @@
-
 export type TFMAFiltersPagination = {
     offset?: number;
     skip?: number;
@@ -26,16 +25,30 @@ export type TFMAFiltersSearch = {
     filter?: string;
 };
 
-export type TFMAFilters = TFMAFiltersPagination & TFMAFiletrsSort & TFMAFiltersProjection & TFMAFiltersSearch & TFMAFiltersPopulate;
+export type TFMAFilters = TFMAFiltersPagination &
+    TFMAFiletrsSort &
+    TFMAFiltersProjection &
+    TFMAFiltersSearch &
+    TFMAFiltersPopulate;
 
-export type TFMASchemaVerbs = 'routeGet' | 'routePost' | 'routePut' | 'routeDelete' | 'routePatch' | 'routeList';
+export type TFMASchemaVerbs =
+    | 'routeGet'
+    | 'routePost'
+    | 'routePut'
+    | 'routeDelete'
+    | 'routePatch'
+    | 'routeList';
 
 export type TFMASchema = {
     summary: string;
     tags: Array<string>;
-    params?: ajvSchema
-    query?: Omit<ajvSchema, 'properties'> & { properties: Partial<Record<keyof TFMAFilters, ajvSchema>>};
-    querystring?: Omit<ajvSchema, 'properties'> & { properties: Partial<Record<keyof TFMAFilters, ajvSchema>>};
+    params?: ajvSchema;
+    query?: Omit<ajvSchema, 'properties'> & {
+        properties: Partial<Record<keyof TFMAFilters, ajvSchema>>;
+    };
+    querystring?: Omit<ajvSchema, 'properties'> & {
+        properties: Partial<Record<keyof TFMAFilters, ajvSchema>>;
+    };
     body?: any;
     response?: {
         200?: ajvSchema;
@@ -60,9 +73,9 @@ export type ajvType =
     | 'null'
     | 'timestamp';
 
-export type ajvProperty =  {
+export type ajvProperty = {
     [key: string]: ajvSchema | ajvProperties;
-}
+};
 
 export type ajvProperties = {
     properties?: ajvProperty;
