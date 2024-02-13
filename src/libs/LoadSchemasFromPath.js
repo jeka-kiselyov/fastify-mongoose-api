@@ -1,27 +1,32 @@
-'use strict';
+import type { TFMASchema } from '../types/index.js';
+import { statSync, readdirSync } from 'fs';
+import path from 'path';
 
-const fs = require('fs');
-const path = require('path');
-
-const loadSchemasFromPath = schemaDirPath => {
-    const schemasFromPath = [];
+const loadSchemasFromPath = async (
+    schemaDirPath: string
+): Promise<TFMASchema[]> => {
+    const schemasFromPath: TFMASchema[] = [];
     const schemaFiles = walkDir(schemaDirPath);
-    schemaFiles.forEach(file => {
-        const schema = require(file);
-        schemasFromPath.push(schema);
-    });
+    for await (const file of schemaFiles) {
+        try {
+            const schema = (await import(file)).default as TFMASchema;
+            if (typeof schema === 'function') schemasFromPath.push(schema);
+        } catch (e: any) {
+            throw new Error(`Error loading schema ${file}: ${e.message}`);
+        }
+    }
     return schemasFromPath;
 };
 
-const walkDir = (schemaDirPath, fileList = []) => {
-    const dir = fs.readdirSync(schemaDirPath);
+const walkDir = (schemaDirPath: string, fileList: string[] = []): string[] => {
+    const dir = readdirSync(schemaDirPath);
     dir.forEach(file => {
         const pathFile = path.join(schemaDirPath, file);
-        const stat = fs.statSync(pathFile);
+        const stat = statSync(pathFile);
         if (stat.isDirectory()) fileList = walkDir(pathFile, fileList);
         else fileList.push(pathFile);
     });
     return fileList;
 };
 
-module.exports = loadSchemasFromPath;
+export { loadSchemasFromPath };
