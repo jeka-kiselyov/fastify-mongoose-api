@@ -1,4 +1,4 @@
-import type { TFMASchemas, ajvSchema } from "../types/index.js";
+import type { TFMASchemas, ajvSchema } from '../types/index.js';
 
 const defaultSchemas = (modelName: string): TFMASchemas => {
     return {
@@ -12,8 +12,7 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                         type: 'string',
                         description: 'Unique identifier of ' + modelName
                     }
-                },
-
+                }
             },
             querystring: {
                 type: 'object',
@@ -25,8 +24,14 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                 }
             },
             response: {
-                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas404#'
+                },
+                500: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas500#'
+                }
             }
         },
         routePost: {
@@ -42,7 +47,10 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                 }
             },
             response: {
-                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
+                500: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas500#'
+                }
             }
         },
         routeList: {
@@ -91,7 +99,10 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                 }
             },
             response: {
-                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
+                500: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas500#'
+                }
             }
         },
         routePut: {
@@ -116,8 +127,14 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                 }
             },
             response: {
-                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas404#'
+                },
+                500: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas500#'
+                }
             }
         },
         routePatch: {
@@ -142,8 +159,14 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                 }
             },
             response: {
-                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas404#'
+                },
+                500: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas500#'
+                }
             }
         },
         routeDelete: {
@@ -167,14 +190,20 @@ const defaultSchemas = (modelName: string): TFMASchemas => {
                         deletedCount: { type: 'number' }
                     }
                 },
-                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas404#'
+                },
+                500: {
+                    type: 'object',
+                    $ref: 'MongooseApiDefErrRespSchemas500#'
+                }
             }
         }
     };
 };
 
-const responseSchema404:ajvSchema = {
+const responseSchema404: ajvSchema = {
     $id: 'MongooseApiDefErrRespSchemas404',
     description: 'Not found',
     type: 'object',
