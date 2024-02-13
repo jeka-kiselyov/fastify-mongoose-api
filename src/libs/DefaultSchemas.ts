@@ -1,6 +1,6 @@
-'use strict';
+import type { TFMASchemas, ajvSchema } from "../types/index.js";
 
-const defaultSchemas = modelName => {
+const defaultSchemas = (modelName: string): TFMASchemas => {
     return {
         routeGet: {
             summary: 'Get details of single ' + modelName,
@@ -12,7 +12,8 @@ const defaultSchemas = modelName => {
                         type: 'string',
                         description: 'Unique identifier of ' + modelName
                     }
-                }
+                },
+
             },
             querystring: {
                 type: 'object',
@@ -24,8 +25,8 @@ const defaultSchemas = modelName => {
                 }
             },
             response: {
-                404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
+                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         },
         routePost: {
@@ -41,7 +42,7 @@ const defaultSchemas = modelName => {
                 }
             },
             response: {
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         },
         routeList: {
@@ -90,7 +91,7 @@ const defaultSchemas = modelName => {
                 }
             },
             response: {
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         },
         routePut: {
@@ -115,8 +116,8 @@ const defaultSchemas = modelName => {
                 }
             },
             response: {
-                404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
+                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         },
         routePatch: {
@@ -141,8 +142,8 @@ const defaultSchemas = modelName => {
                 }
             },
             response: {
-                404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
+                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         },
         routeDelete: {
@@ -166,14 +167,14 @@ const defaultSchemas = modelName => {
                         deletedCount: { type: 'number' }
                     }
                 },
-                404: { $ref: 'MongooseApiDefErrRespSchemas404#' },
-                500: { $ref: 'MongooseApiDefErrRespSchemas500#' }
+                404: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas404#' },
+                500: { type: 'object', $ref: 'MongooseApiDefErrRespSchemas500#' }
             }
         }
     };
 };
 
-const responseSchema404 = {
+const responseSchema404:ajvSchema = {
     $id: 'MongooseApiDefErrRespSchemas404',
     description: 'Not found',
     type: 'object',
@@ -184,7 +185,7 @@ const responseSchema404 = {
     }
 };
 
-const responseSchema500 = {
+const responseSchema500: ajvSchema = {
     $id: 'MongooseApiDefErrRespSchemas500',
     description: 'Server error',
     type: 'object',
@@ -195,4 +196,4 @@ const responseSchema500 = {
     }
 };
 
-module.exports = { defaultSchemas, responseSchema404, responseSchema500 };
+export { defaultSchemas, responseSchema404, responseSchema500 };
