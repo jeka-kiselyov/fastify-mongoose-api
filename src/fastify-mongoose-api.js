@@ -1,22 +1,33 @@
-const fp = require('fastify-plugin');
-const API = require('./src/API.js');
-const DefaultModelMethods = require('./src/DefaultModelMethods.js');
+import type {
+    TFMAPluginOptions,
+    TFMAApiOptions,
+    TFMAPluginAsync
+} from './types/index.js';
+import type { FastifyInstance } from 'fastify';
+import API from './libs/API.js';
+import DefaultModelMethods from './libs/DefaultModelMethods.js';
+import fp from 'fastify-plugin';
 
-function initPlugin(fastify, options, next) {
-	options = options || {};
-	options.fastify = fastify;
+const initPlugin: TFMAPluginAsync<TFMAPluginOptions> = async (
+    fastify: FastifyInstance,
+    options: TFMAPluginOptions
+) => {
+    options = options || {};
 
-	const api = new API(options);
-	fastify.decorate('mongooseAPI', api);
+    const apiOptions: TFMAApiOptions = {
+        ...options,
+        fastify
+    };
 
-	next();
-}
+    const api = new API(apiOptions);
+    fastify.decorate('mongooseAPI', api);
+};
 
 const plugin = fp(initPlugin, {
-	fastify: '^2.0.0 || ^3.0.0 || ^4.0.0',
-	name: 'fastify-mongoose-api',
+    fastify: '^2.0.0 || ^3.0.0 || ^4.0.0',
+    name: 'fastify-mongoose-api'
 });
 
 plugin.DefaultModelMethods = DefaultModelMethods;
 
-module.exports = plugin;
+export default plugin;
