@@ -1,3 +1,30 @@
+import type API from '../libs/API.js';
+import type DefaultModelMethods from '../libs/DefaultModelMethods.js';
+import type {
+    FastifyInstance,
+    FastifyPluginAsync,
+    FastifyPluginOptions
+} from 'fastify';
+
+declare module 'fastify' {
+    export interface FastifyInstance {
+        mongooseAPI: API;
+    }
+}
+
+export type TFMAPluginAsync<T extends TFMAPluginOptions> =
+    FastifyPluginAsync<T> & {
+        DefaultModelMethods?: typeof DefaultModelMethods;
+    };
+
+export type TFMAPluginOptions = FastifyPluginOptions & {
+    prefix?: string;
+};
+
+export type TFMAApiOptions = TFMAPluginOptions & {
+    fastify: FastifyInstance;
+};
+
 export type TFMAFiltersPagination = {
     offset?: number;
     skip?: number;
