@@ -2,7 +2,7 @@ import type {
     TFMAPluginOptions,
     TFMAApiOptions,
     TFMAPluginAsync
-} from './types/index.js';
+} from './types.js';
 import type { FastifyInstance } from 'fastify';
 import API from './libs/API.js';
 import DefaultModelMethods from './libs/DefaultModelMethods.js';

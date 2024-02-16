@@ -1,4 +1,4 @@
-import type { TFMASchemas, ajvSchema } from '../types/index.js';
+import type { TFMASchemas, ajvSchema } from '../types.js';
 
 const defaultSchemas = (modelName: string): TFMASchemas => {
     return {

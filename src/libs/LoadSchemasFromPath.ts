@@ -1,4 +1,4 @@
-import type { TFMASchema } from '../types/index.js';
+import type { TFMASchema } from '../types.js';
 import { statSync, readdirSync } from 'fs';
 import path from 'path';
 
