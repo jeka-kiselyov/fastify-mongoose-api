@@ -1,5 +1,5 @@
-import type API from '../libs/API.js';
-import type DefaultModelMethods from '../libs/DefaultModelMethods.js';
+import type API from './libs/API.js';
+import type DefaultModelMethods from './libs/DefaultModelMethods.js';
 import type {
     FastifyInstance,
     FastifyPluginAsync,
