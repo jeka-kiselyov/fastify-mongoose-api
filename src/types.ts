@@ -17,8 +17,18 @@ export type TFMAPluginAsync<T extends TFMAPluginOptions> =
         DefaultModelMethods?: typeof DefaultModelMethods;
     };
 
+export type TFMAMethods = 'list' | 'get' | 'post' | 'patch' | 'put' | 'delete';
+
 export type TFMAPluginOptions = FastifyPluginOptions & {
+    models: Record<string, TFMASchema>;
     prefix?: string;
+    setDefaults?: boolean;
+    exposeVersionKey?: boolean;
+    exposeModelName?: boolean|string;
+    methods?: TFMAMethods[];
+    checkAuth?: (request: any, reply: any) => boolean;
+    schemas?: TFMASchemas[];
+    schemaDirPath?: string;
 };
 
 export type TFMAApiOptions = TFMAPluginOptions & {
