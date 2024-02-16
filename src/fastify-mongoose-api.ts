@@ -19,7 +19,7 @@ const initPlugin: TFMAPluginAsync<TFMAPluginOptions> = async (
         fastify
     };
 
-    const api = new API(apiOptions);
+    const api = await API.create(apiOptions);
     fastify.decorate('mongooseAPI', api);
 };
 
