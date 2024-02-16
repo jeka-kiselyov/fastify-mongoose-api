@@ -1,15 +1,15 @@
-import type { TFMASchema } from '../types.js';
+import type { TFMASchemas } from '../types.js';
 import { statSync, readdirSync } from 'fs';
 import path from 'path';
 
 const loadSchemasFromPath = async (
     schemaDirPath: string
-): Promise<TFMASchema[]> => {
-    const schemasFromPath: TFMASchema[] = [];
+): Promise<TFMASchemas[]> => {
+    const schemasFromPath: TFMASchemas[] = [];
     const schemaFiles = walkDir(schemaDirPath);
     for await (const file of schemaFiles) {
         try {
-            const schema = (await import(file)).default as TFMASchema;
+            const schema = (await import(file)).default as TFMASchemas;
             if (typeof schema === 'function') schemasFromPath.push(schema);
         } catch (e: any) {
             throw new Error(`Error loading schema ${file}: ${e.message}`);
