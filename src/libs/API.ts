@@ -1,20 +1,29 @@
-const APIRouter = require('./APIRouter.js');
-const DefaultModelMethods = require('./DefaultModelMethods');
-const { responseSchema404, responseSchema500 } = require('./DefaultSchemas');
-const loadSchemasFromPath = require('./LoadSchemasFromPath');
+import APIRouter from './APIRouter.js';
+import DefaultModelMethods from './DefaultModelMethods.js';
+import { responseSchema404, responseSchema500 } from './DefaultSchemas.js';
+import { loadSchemasFromPath } from './LoadSchemasFromPath.js';
+import {TFMAApiOptions, TFMASchema, TFMASchemas} from '../types.js';
 
 class API {
-    constructor(params = {}) {
+    private _models: TFMAApiOptions['models'];
+    private _fastify: TFMAApiOptions['fastify'];
+    private _checkAuth: TFMAApiOptions['checkAuth'];
+    private _exposeVersionKey: TFMAApiOptions['exposeVersionKey'];
+    private _defaultModelMethods: typeof DefaultModelMethods;
+    private _exposeModelName: TFMAApiOptions['exposeModelName'];
+    private _methods: TFMAApiOptions['methods'];
+    private _apiRouters: Record<string, APIRouter>;
+    private schemas: TFMASchemas[];
+
+    public static create(params: TFMAApiOptions) {
+        return new API(params).init(params);
+    }
+
+    constructor(params: TFMAApiOptions) {
         this._models = params.models;
         this._fastify = params.fastify;
-
-        if (!this._models || !this._fastify) {
-            throw 'Please initialize fastify-mongoose-api with fastify.register() with required models parameter';
-        }
-
-        this._checkAuth = params.checkAuth || null;
-        this._defaultModelMethods =
-            params.defaultModelMethods || DefaultModelMethods;
+        this._checkAuth = params.checkAuth || undefined;
+        this._defaultModelMethods = DefaultModelMethods;
 
         this._exposeVersionKey = params.exposeVersionKey; // default = true
         if (this._exposeVersionKey === undefined) {
@@ -37,15 +46,21 @@ class API {
         this._registerReferencedSchemas();
 
         this.schemas = params.schemas || [];
+    }
+
+    private async init(params: TFMAApiOptions) {
         if (params.schemaDirPath)
             this.schemas = [
                 ...this.schemas,
-                ...loadSchemasFromPath(params.schemaDirPath)
+                ...await loadSchemasFromPath(params.schemaDirPath)
             ];
 
-        for (let key of Object.keys(this._models)) {
-            this.addModel(this._models[key], params);
+        for (const key of Object.keys(this._models)) {
+            const model = this._models[key];
+            model && this.addModel(model, params);
         }
+
+        return this;
     }
 
     get apiRouters() {
@@ -57,14 +72,14 @@ class API {
         this._fastify.addSchema(responseSchema500);
     }
 
-    addModel(model, params = {}) {
+    addModel(model:TFMASchema, params: TFMAApiOptions) {
         let setDefaults = true;
         if (params.setDefaults === false) {
             setDefaults = false;
         }
 
-        let checkAuth = params.checkAuth ? params.checkAuth : null;
-        let prefix = params.prefix ? params.prefix : null;
+        const checkAuth = params.checkAuth ? params.checkAuth : null;
+        const prefix = params.prefix ? params.prefix : null;
         if (model.schema) {
             if (setDefaults) {
                 this.decorateModelWithDefaultAPIMethods(model);
@@ -97,7 +112,7 @@ class API {
         }
     }
 
-    decorateModelWithDefaultAPIMethods(model) {
+    decorateModelWithDefaultAPIMethods(model: TFMASchema) {
         if (model.schema) {
             if (!model.prototype['apiValues']) {
                 model.prototype['apiValues'] =
@@ -122,4 +137,4 @@ class API {
     }
 }
 
-module.exports = API;
+export default API;

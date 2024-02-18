@@ -7,7 +7,7 @@ class DefaultModelMethods {
         /// this points to model (schema.statics.)
         const subRoutes = {};
 
-        let fPopulated = pathname => {
+        const fPopulated = pathname => {
             return async doc => {
                 const populate = doc.populate(pathname);
                 if (populate.execPopulate) {
@@ -21,7 +21,7 @@ class DefaultModelMethods {
             };
         };
 
-        let fExternal = (externalModel, refKey) => {
+        const fExternal = (externalModel, refKey) => {
             return doc => {
                 const whereOptions = {};
                 whereOptions[refKey] = doc;
@@ -43,8 +43,8 @@ class DefaultModelMethods {
             }
         });
 
-        for (let key of Object.keys(this.db.models)) {
-            let model = this.db.models[key];
+        for (const key of Object.keys(this.db.models)) {
+            const model = this.db.models[key];
             model.schema.eachPath((refKey, schematype) => {
                 if (
                     schematype &&
@@ -103,7 +103,7 @@ class DefaultModelMethods {
      */
     static async apiPost(data) {
         /// this points to model (schema.statics.)
-        let doc = new this();
+        const doc = new this();
 
         this.schema.eachPath(pathname => {
             if (data[pathname] !== undefined) {
@@ -140,7 +140,7 @@ class DefaultModelMethods {
         // you may end showing off data you wanted to keep private.
 
         let areThereDeepObjects = false;
-        let deepObjectsPromisesArray = [];
+        const deepObjectsPromisesArray = [];
         const deepObjectsPromisesResults = {};
 
         let versionKey = true;
@@ -240,7 +240,7 @@ class DefaultModelMethods {
             }
             if (isChanged) {
                 if (pathname.includes('.')) {
-                    let doc = this;
+                    const doc = this;
                     // nested document
                     const keys = pathname.split('.');
                     const lastKey = keys.pop();
@@ -268,4 +268,4 @@ class DefaultModelMethods {
     }
 }
 
-module.exports = DefaultModelMethods;
+export default DefaultModelMethods;
