@@ -367,4 +367,4 @@ class APIRouter {
     }
 }
 
-module.exports = APIRouter;
+export default APIRouter;
