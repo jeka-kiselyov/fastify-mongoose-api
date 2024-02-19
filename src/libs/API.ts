@@ -2,7 +2,7 @@ import APIRouter from './APIRouter.js';
 import DefaultModelMethods from './DefaultModelMethods.js';
 import { responseSchema404, responseSchema500 } from './DefaultSchemas.js';
 import { loadSchemasFromPath } from './LoadSchemasFromPath.js';
-import {TFMAApiOptions, TFMASchema, TFMASchemas;IAPI} from '../types.js';
+import { TFMAApiOptions, TFMASchema, TFMASchemas, IAPI, TFMAPluginOptions, TFMAModel } from '../types.js';
 
 class API implements IAPI {
     private _models: TFMAApiOptions['models'];
@@ -63,6 +63,7 @@ class API implements IAPI {
         return this;
     }
 
+
     get apiRouters() {
         return this._apiRouters;
     }
@@ -72,7 +73,7 @@ class API implements IAPI {
         this._fastify.addSchema(responseSchema500);
     }
 
-    addModel(model:TFMASchema, params: TFMAApiOptions) {
+    addModel(model: TFMAModel, params: TFMAApiOptions) {
         let setDefaults = true;
         if (params.setDefaults === false) {
             setDefaults = false;
@@ -98,12 +99,12 @@ class API implements IAPI {
                     fastify: this._fastify,
                     schemas: this.schemas
                         ? this.schemas.find(
-                              o =>
-                                  o.name.toLowerCase().replace(/s$/g, '') ===
-                                  model.prototype.collection.name
-                                      .toLowerCase()
-                                      .replace(/s$/g, '')
-                          )
+                            o =>
+                                o.name.toLowerCase().replace(/s$/g, '') ===
+                                model.prototype.collection.name
+                                    .toLowerCase()
+                                    .replace(/s$/g, '')
+                        )
                         : {}
                 });
 
@@ -112,7 +113,7 @@ class API implements IAPI {
         }
     }
 
-    decorateModelWithDefaultAPIMethods(model: TFMASchema) {
+    decorateModelWithDefaultAPIMethods(model: TFMAModel) {
         if (model.schema) {
             if (!model.prototype['apiValues']) {
                 model.prototype['apiValues'] =
