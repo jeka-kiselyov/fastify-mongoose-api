@@ -2,9 +2,9 @@ import APIRouter from './APIRouter.js';
 import DefaultModelMethods from './DefaultModelMethods.js';
 import { responseSchema404, responseSchema500 } from './DefaultSchemas.js';
 import { loadSchemasFromPath } from './LoadSchemasFromPath.js';
-import {TFMAApiOptions, TFMASchema, TFMASchemas} from '../types.js';
+import {TFMAApiOptions, TFMASchema, TFMASchemas;IAPI} from '../types.js';
 
-class API {
+class API implements IAPI {
     private _models: TFMAApiOptions['models'];
     private _fastify: TFMAApiOptions['fastify'];
     private _checkAuth: TFMAApiOptions['checkAuth'];
@@ -85,7 +85,7 @@ class API {
                 this.decorateModelWithDefaultAPIMethods(model);
             }
 
-            if (model.prototype.apiValues) {
+            if (model.apiValues) {
                 //// if model has defined:
                 ////  schema.virtual('APIValues').get(function () { .... })
                 //// then expose it via API
