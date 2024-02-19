@@ -1,3 +1,5 @@
+import { SchemaTypeOptions as MongooseSchemaTypeOptions, Model as MongooseModel } from 'mongoose';
+import type { TFMPModel } from 'fastify-mongoose-plugin';
 import type API from './libs/API.js';
 import type DefaultModelMethods from './libs/DefaultModelMethods.js';
 import type {
@@ -19,19 +21,21 @@ export type TFMAPluginAsync<T extends TFMAPluginOptions> =
 
 export type TFMAMethods = 'list' | 'get' | 'post' | 'patch' | 'put' | 'delete';
 
+export type TFMAModel = Partial<MongooseModel<any>> & TFMAModelMethods;
+
 export type TFMAPluginOptions = FastifyPluginOptions & {
-    models: Record<string, TFMASchema>;
+    models: Record<string, TFMAModel>;
     prefix?: string;
     setDefaults?: boolean;
     exposeVersionKey?: boolean;
-    exposeModelName?: boolean|string;
+    exposeModelName?: boolean | string;
     methods?: TFMAMethods[];
     checkAuth?: (request: any, reply: any) => boolean;
     schemas?: TFMASchemas[];
     schemaDirPath?: string;
 };
 
-export interface IAPI {}
+export interface IAPI { }
 
 export type TFMAApiOptions = TFMAPluginOptions & {
     fastify: FastifyInstance;
@@ -78,7 +82,7 @@ export type TFMASchemaVerbs =
     | 'routePatch'
     | 'routeList';
 
-export type TFMASchema = Partial<ajvMongooseSchema> & {
+export type TFMASchema = TFMAModelMethods & {
     summary: string;
     tags: Array<string>;
     params?: ajvSchema;
@@ -88,7 +92,7 @@ export type TFMASchema = Partial<ajvMongooseSchema> & {
     querystring?: Omit<ajvSchema, 'properties'> & {
         properties: Partial<Record<keyof TFMAFilters, ajvSchema>>;
     };
-    body?: any;
+    body?: ajvSchema;
     response?: {
         200?: ajvSchema;
         204?: ajvSchema;
@@ -98,35 +102,37 @@ export type TFMASchema = Partial<ajvMongooseSchema> & {
         404?: ajvSchema;
         500?: ajvSchema;
     };
+};
+
+export type TFMAModelMethods = {
     apiValues?: (request: any, reply: any) => any;
+    apiPost?: (request: any, reply: any) => any;
+    apiPut?: (request: any, reply: any) => any;
+    apiDelete?: (request: any, reply: any) => any;
+    apiSubRoutes?: (request: any, reply: any) => any;
 };
 
-export type TFMASchemas = Record<TFMASchemaVerbs, TFMASchema>;
+// define a schema element for db and route element
+// it's an item of the schemas config option
+// TODO: maybe find a better name because is ONE element
+export type TFMASchemas =
+    Record<TFMASchemaVerbs, TFMASchema>     // routeGet/Post/... definition for ajvSchema routes
+    & TFMPModel                             // fastify-mongoose-plugin model definition. See: https://github.com/EmilianoBruni/fastify-mongoose-plugin/?tab=readme-ov-file#options .models
+    & {
+        ref: ajvSchema | ajvSchema[];       // ajvSchemas to register in fastify
+    };
 
-export type ajvType =
-    | 'string'
-    | 'number'
-    | 'integer'
-    | 'boolean'
-    | 'object'
-    | 'array'
-    | 'null'
-    | 'timestamp';
+/// Mongoose elements
 
-export type ajvProperty = {
-    [key: string]: ajvSchema | ajvProperties;
-};
+// describe a mongoose schema for the model
+// see: https://www.geeksforgeeks.org/mongoose-schematype-options/
+export type MongooseSchema<T = any> = Record<string, MongooseSchemaTypeOptions<T>>;
 
-export type ajvProperties = {
-    properties?: ajvProperty;
-};
+/// AJV elements
 
-type MongooseSchema = Record<string, any>;
-
-type ajvMongooseSchema = {
-    schema: MongooseSchema ;
-};
-
+// describe an ajv schema for validation and serialization in fastify routes
+// https://ajv.js.org/json-schema.html#openapi-support
+// used in TFMASchemas.ref[] and in routeGet.body, .params, .response.200
 export type ajvSchema = ajvProperties & {
     type: ajvType;
     items?: ajvSchema[];
@@ -173,3 +179,22 @@ export type ajvSchema = ajvProperties & {
     // not sure $id goes here
     $id?: string;
 };
+
+export type ajvType =
+    | 'string'
+    | 'number'
+    | 'integer'
+    | 'boolean'
+    | 'object'
+    | 'array'
+    | 'null'
+    | 'timestamp';
+
+export type ajvProperty = {
+    [key: string]: ajvSchema | ajvProperties;
+};
+
+export type ajvProperties = {
+    properties?: ajvProperty;
+};
+
