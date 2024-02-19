@@ -31,6 +31,8 @@ export type TFMAPluginOptions = FastifyPluginOptions & {
     schemaDirPath?: string;
 };
 
+export interface IAPI {}
+
 export type TFMAApiOptions = TFMAPluginOptions & {
     fastify: FastifyInstance;
 };
@@ -76,7 +78,7 @@ export type TFMASchemaVerbs =
     | 'routePatch'
     | 'routeList';
 
-export type TFMASchema = {
+export type TFMASchema = Partial<ajvMongooseSchema> & {
     summary: string;
     tags: Array<string>;
     params?: ajvSchema;
@@ -96,6 +98,7 @@ export type TFMASchema = {
         404?: ajvSchema;
         500?: ajvSchema;
     };
+    apiValues?: (request: any, reply: any) => any;
 };
 
 export type TFMASchemas = Record<TFMASchemaVerbs, TFMASchema>;
@@ -116,6 +119,12 @@ export type ajvProperty = {
 
 export type ajvProperties = {
     properties?: ajvProperty;
+};
+
+type MongooseSchema = Record<string, any>;
+
+type ajvMongooseSchema = {
+    schema: MongooseSchema ;
 };
 
 export type ajvSchema = ajvProperties & {
