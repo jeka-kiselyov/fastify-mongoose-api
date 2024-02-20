@@ -2,7 +2,7 @@ import APIRouter from './APIRouter.js';
 import DefaultModelMethods from './DefaultModelMethods.js';
 import { responseSchema404, responseSchema500 } from './DefaultSchemas.js';
 import { loadSchemasFromPath } from './LoadSchemasFromPath.js';
-import { TFMAApiOptions, TFMASchema, TFMASchemas, IAPI, TFMAPluginOptions, TFMAModel } from '../types.js';
+import { TFMAApiOptions, TFMASchemas, IAPI, TFMAModel, TFMAModelMethodsKeys } from '../types.js';
 
 class API implements IAPI {
     private _models: TFMAApiOptions['models'];
@@ -85,7 +85,6 @@ class API implements IAPI {
             if (setDefaults) {
                 this.decorateModelWithDefaultAPIMethods(model);
             }
-
             if (model.apiValues) {
                 //// if model has defined:
                 ////  schema.virtual('APIValues').get(function () { .... })
@@ -101,38 +100,30 @@ class API implements IAPI {
                         ? this.schemas.find(
                             o =>
                                 o.name.toLowerCase().replace(/s$/g, '') ===
-                                model.prototype.collection.name
+                                model.collection!.name
                                     .toLowerCase()
                                     .replace(/s$/g, '')
                         )
                         : {}
                 });
 
-                model.prototype.__api = this;
+                model.__api = this;
             }
         }
     }
 
     decorateModelWithDefaultAPIMethods(model: TFMAModel) {
         if (model.schema) {
-            if (!model.prototype['apiValues']) {
-                model.prototype['apiValues'] =
-                    this._defaultModelMethods.prototype.apiValues;
-            }
-            if (!model.prototype['apiPut']) {
-                model.prototype['apiPut'] =
-                    this._defaultModelMethods.prototype.apiPut;
-            }
-            if (!model.prototype['apiDelete']) {
-                model.prototype['apiDelete'] =
-                    this._defaultModelMethods.prototype.apiDelete;
-            }
-
-            if (!model.apiPost) {
-                model.apiPost = this._defaultModelMethods.apiPost;
-            }
-            if (!model.apiSubRoutes) {
-                model.apiSubRoutes = this._defaultModelMethods.apiSubRoutes;
+            const methods: TFMAModelMethodsKeys[] = [
+                'apiValues',
+                'apiPut',
+                'apiDelete',
+                'apiPost',
+                'apiSubRoutes'
+            ];
+            for (const method of methods) {
+                // TODO: fix this 
+                model[method] ??= DefaultModelMethods[method] as any; 
             }
         }
     }
