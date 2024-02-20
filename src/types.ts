@@ -21,7 +21,6 @@ export type TFMAPluginAsync<T extends TFMAPluginOptions> =
 
 export type TFMAMethods = 'list' | 'get' | 'post' | 'patch' | 'put' | 'delete';
 
-export type TFMAModel = Partial<MongooseModel<any>> & TFMAModelMethods;
 
 export type TFMAPluginOptions = FastifyPluginOptions & {
     models: Record<string, TFMAModel>;
@@ -104,13 +103,23 @@ export type TFMASchema = TFMAModelMethods & {
     };
 };
 
-export type TFMAModelMethods = {
-    apiValues?: (request: any, reply: any) => any;
-    apiPost?: (request: any, reply: any) => any;
-    apiPut?: (request: any, reply: any) => any;
-    apiDelete?: (request: any, reply: any) => any;
-    apiSubRoutes?: (request: any, reply: any) => any;
-};
+/// Model
+
+export type TFMAModelMethodsKeys = 'apiValues' | 'apiPost' | 'apiPut' | 'apiDelete' | 'apiSubRoutes';
+
+export type TFMAModelMethods<T=any> = {
+    apiValues?: (request: any) => Promise<T> //! Not sure
+    apiPost?: (data: T) => Promise<T>;
+    apiPut?: (data: T) => Promise<T>;
+    apiDelete?: () => Promise<void>;
+    apiSubRoutes?: () => any; // TODO: define return type
+}
+
+export type TFMAModel<T=any> = 
+    Omit<Partial<MongooseModel<T>>, 'modelName'> &
+    Required<Pick<MongooseModel<T>, 'modelName'>> 
+    & TFMAModelMethods &
+    { __api?: API;}
 
 // define a schema element for db and route element
 // it's an item of the schemas config option
