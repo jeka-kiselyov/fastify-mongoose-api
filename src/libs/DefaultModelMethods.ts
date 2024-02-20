@@ -1,4 +1,6 @@
-class DefaultModelMethods {
+import type { TFMAModelMethods } from "../types.js";
+
+class DefaultModelMethods implements TFMAModelMethods {
     /**
      * [apiSubRoutes description]
      * @return {[type]} [description]
@@ -101,7 +103,7 @@ class DefaultModelMethods {
      * @param  Object data [description]
      * @return Document      [description]
      */
-    static async apiPost(data) {
+   static async apiPost(data) {
         /// this points to model (schema.statics.)
         const doc = new this();
 
@@ -130,7 +132,7 @@ class DefaultModelMethods {
      * [apiValues description]
      * @return {[type]} [description]
      */
-    async apiValues(request) {
+    static async apiValues(request) {
         // complex logic below is to be sure deeper populated object are covered by their .apiValues()
         // method.
         // If you don't need this, just use simple:
@@ -226,7 +228,7 @@ class DefaultModelMethods {
      * @param  Object data [description]
      * @return Document      [description]
      */
-    async apiPut(data) {
+    static async apiPut(data) {
         //// this points to document (schema.methods.)
         this.schema.eachPath(pathname => {
             let newValue = undefined;
@@ -262,7 +264,7 @@ class DefaultModelMethods {
      * [apiDelete description]
      * @return Boolean	success
      */
-    async apiDelete() {
+    static async apiDelete() {
         //// this points to document (schema.methods.)
         await this.deleteOne();
     }
