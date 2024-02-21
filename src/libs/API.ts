@@ -96,7 +96,7 @@ class API implements IAPI {
                     checkAuth: checkAuth,
                     prefix: prefix,
                     fastify: this._fastify,
-                    schemas: this.schemas
+                    schema: this.schemas
                         ? this.schemas.find(
                             o =>
                                 o.name.toLowerCase().replace(/s$/g, '') ===
