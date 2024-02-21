@@ -35,18 +35,19 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^20.11.17",
-    "fastify": "^4.26.0",
+    "@types/node": "^20.11.19",
+    "fastify": "^4.26.1",
     "fastify-plugin": "^4.5.1",
-    "mongoose": "^8.1.1"
+    "mongoose": "^8.1.3"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.0.1",
-    "@typescript-eslint/parser": "^7.0.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.1.3",
+    "fastify-mongoose-plugin": "0.1.2",
     "grunt": "^1.6.1",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-env": "^1.0.1",
@@ -54,10 +55,10 @@
     "grunt-tape": "^0.1.0",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
-    "rollup": "^4.10.0",
+    "rollup": "^4.12.0",
     "tap": "^18.7.0",
     "typescript": "^5.3.3",
-    "typescript-eslint": "^7.0.1"
+    "typescript-eslint": "^7.0.2"
   },
   "exports": {
     "import": "./dist/index.js",
