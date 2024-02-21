@@ -1,22 +1,33 @@
-const { defaultSchemas } = require('./DefaultSchemas');
-
-const capFL = string => string.charAt(0).toUpperCase() + string.slice(1);
+import { defaultSchemas } from './DefaultSchemas.js'
+import type { TFMAApiRouterOptions, TFMAModel, TFMASchemas, TFMASchemaVerbs } from '../types.js';
+const capFL = (param:string):string => param.charAt(0).toUpperCase() + param.slice(1);
 
 class APIRouter {
-    constructor(params = {}) {
-        this._models = params.models || [];
-        this._fastify = params.fastify || null;
-        this._model = params.model || null;
+    private _fastify: TFMAApiRouterOptions['fastify'];
+    private _model: TFMAModel;
+    private _methods: TFMAApiRouterOptions['methods'];
+    private _checkAuth: TFMAApiRouterOptions['checkAuth'] |null;
+    private _schema: TFMASchemas | {} ;
+    private _modelName: string;
+    private _prefix: string;
+    private _collectionName: string;
+    private _path: string;
+    private _apiSubRoutesFunctions: Record<string, Function>;
+    private _defaultSchemas: typeof defaultSchemas;
+
+    constructor(params: TFMAApiRouterOptions) {
+        this._fastify = params.fastify;
+        this._model = params.model;
         this._methods = params.methods;
         this._checkAuth = params.checkAuth || null;
-        this._schemas = params.schemas || {};
+        this._schema = params.schema || {};
         this._registerReferencedSchemas();
 
         this._modelName = this._model.modelName;
 
         this._prefix = params.prefix || '/api/';
 
-        this._collectionName = this._model.prototype.collection.name;
+        this._collectionName = this._model.collection!.name;
 
         this._path = this._prefix + this._collectionName;
 
@@ -34,8 +45,8 @@ class APIRouter {
     }
 
     _registerReferencedSchemas() {
-        const s = this._schemas;
-        if (s.ref != undefined) {
+        const s = this._schema as TFMASchemas;
+        if (s.ref) {
             if (!Array.isArray(s.ref)) s.ref = [s.ref];
             s.ref.forEach(item => this._fastify.addSchema(item));
         }
@@ -43,12 +54,12 @@ class APIRouter {
 
     setUpRoutes() {
         let path = this._path;
-        this._methods.forEach(item =>
+        this._methods && this._methods.forEach(item =>
             this._fastify[item === 'list' ? 'get' : item](
                 path + (item == 'list' || item == 'post' ? '' : '/:id'),
                 this._populateSchema(
                     'route' + capFL(item),
-                    this._schemas['route' + capFL(item)]
+                    this._schema['route' + capFL(item)]
                 ),
                 this.routeHandler('route' + capFL(item))
             )
@@ -68,7 +79,7 @@ class APIRouter {
         }
     }
 
-    _populateSchema(funcName, optSchema) {
+    _populateSchema(funcName: TFMASchemaVerbs, optSchema:TFMASchemas) {
         if (optSchema === undefined) return {};
         // get default schema for funcName and merge with optSchema
         // merge response separately
