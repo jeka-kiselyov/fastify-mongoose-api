@@ -34,6 +34,12 @@ export type TFMAPluginOptions = FastifyPluginOptions & {
     schemaDirPath?: string;
 };
 
+// TODO: restrict to only apirouter parameters
+export type TFMAApiRouterOptions = TFMAApiOptions & {
+    model: TFMAModel;
+    schema: TFMASchemas;
+}
+
 export interface IAPI { }
 
 export type TFMAApiOptions = TFMAPluginOptions & {
