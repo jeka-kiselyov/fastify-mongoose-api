@@ -1,26 +1,26 @@
 import { defaultSchemas } from './DefaultSchemas.js'
-import type { TFMAApiRouterOptions, TFMAModel, TFMASchemas, TFMASchemaVerbs } from '../types.js';
-const capFL = (param:string):string => param.charAt(0).toUpperCase() + param.slice(1);
+import type { FastifyGenRequest, FastifyGenReply, FastifyIdRequest, TFMAModelMethods, TFMAApiRouterOptions, TFMAModel, TFMASchemas, TFMASchema, TFMASchemaVerbs, TFMAModelMethodsKeys } from '../types.js';
+const capFL = (param: string): string => param.charAt(0).toUpperCase() + param.slice(1);
 
 class APIRouter {
     private _fastify: TFMAApiRouterOptions['fastify'];
     private _model: TFMAModel;
     private _methods: TFMAApiRouterOptions['methods'];
-    private _checkAuth: TFMAApiRouterOptions['checkAuth'] |null;
-    private _schema: TFMASchemas | {} ;
+    private _checkAuth: TFMAApiRouterOptions['checkAuth'] | null;
+    private _schema: TFMASchemas | undefined;
     private _modelName: string;
     private _prefix: string;
     private _collectionName: string;
     private _path: string;
-    private _apiSubRoutesFunctions: Record<string, Function>;
-    private _defaultSchemas: typeof defaultSchemas;
+    private _apiSubRoutesFunctions: TFMAModelMethods;
+    private _defaultSchemas: ReturnType<typeof defaultSchemas>;
 
     constructor(params: TFMAApiRouterOptions) {
         this._fastify = params.fastify;
         this._model = params.model;
         this._methods = params.methods;
         this._checkAuth = params.checkAuth || null;
-        this._schema = params.schema || {};
+        this._schema = params.schema || undefined;
         this._registerReferencedSchemas();
 
         this._modelName = this._model.modelName;
@@ -45,8 +45,8 @@ class APIRouter {
     }
 
     _registerReferencedSchemas() {
-        const s = this._schema as TFMASchemas;
-        if (s.ref) {
+        const s = this._schema;
+        if (s && s.ref) {
             if (!Array.isArray(s.ref)) s.ref = [s.ref];
             s.ref.forEach(item => this._fastify.addSchema(item));
         }
@@ -54,16 +54,14 @@ class APIRouter {
 
     setUpRoutes() {
         let path = this._path;
-        this._methods && this._methods.forEach(item =>
-            this._fastify[item === 'list' ? 'get' : item](
+        this._methods && this._methods.forEach(item => {
+            const verb = 'route' + capFL(item) as TFMASchemaVerbs;
+            return this._fastify[item === 'list' ? 'get' : item](
                 path + (item == 'list' || item == 'post' ? '' : '/:id'),
-                this._populateSchema(
-                    'route' + capFL(item),
-                    this._schema['route' + capFL(item)]
-                ),
-                this.routeHandler('route' + capFL(item))
+                this._populateSchema(verb, this._schema![verb]),
+                this.routeHandler(verb)
             )
-        );
+        });
 
         /// check if there's apiSubRoutes method on the model
         if (this._model['apiSubRoutes']) {
@@ -79,7 +77,7 @@ class APIRouter {
         }
     }
 
-    _populateSchema(funcName: TFMASchemaVerbs, optSchema:TFMASchemas) {
+    _populateSchema(funcName: TFMASchemaVerbs, optSchema: TFMASchema) {
         if (optSchema === undefined) return {};
         // get default schema for funcName and merge with optSchema
         // merge response separately
@@ -95,24 +93,24 @@ class APIRouter {
         };
     }
 
-    routeHandler(funcName, subRouteName = null) {
-        return async (request, reply) => {
+    routeHandler(funcName: TFMASchemaVerbs, subRouteName: TFMAModelMethodsKeys | null = null) {
+        return async (request: FastifyGenRequest, reply: FastifyGenReply) => {
             if (typeof this._checkAuth === 'function') {
                 await this._checkAuth(request, reply);
             }
             if (subRouteName) {
-                return await this.routeSub(subRouteName, request, reply);
+                return await this.routeSub(subRouteName, request as FastifyIdRequest, reply);
             } else {
                 return await this[funcName](request, reply);
             }
         };
     }
 
-    async routeSub(routeName, request, reply) {
+    async routeSub(routeName: TFMAModelMethodsKeys, request:FastifyIdRequest, reply: FastifyGenReply) {
         let id = request.params.id || null;
         let doc = null;
         try {
-            doc = await this._model.findById(id).exec();
+            doc = await this._model.findById!(id).exec();
         } catch (e) {
             doc = null;
         }
@@ -164,8 +162,8 @@ class APIRouter {
         let populate = request.query['populate[]']
             ? request.query['populate[]']
             : request.query.populate
-              ? request.query.populate
-              : null;
+                ? request.query.populate
+                : null;
 
         let ret = {};
 
@@ -277,8 +275,8 @@ class APIRouter {
         let populate = request.query['populate[]']
             ? request.query['populate[]']
             : request.query.populate
-              ? request.query.populate
-              : null;
+                ? request.query.populate
+                : null;
         if (populate) {
             let populated = null;
             if (Array.isArray(populate)) {
