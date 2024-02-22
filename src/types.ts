@@ -5,7 +5,9 @@ import type DefaultModelMethods from './libs/DefaultModelMethods.js';
 import type {
     FastifyInstance,
     FastifyPluginAsync,
-    FastifyPluginOptions
+    FastifyPluginOptions,
+    FastifyRequest,
+    FastifyReply
 } from 'fastify';
 
 declare module 'fastify' {
@@ -13,6 +15,10 @@ declare module 'fastify' {
         mongooseAPI: API;
     }
 }
+
+export type FastifyGenRequest = FastifyRequest;
+export type FastifyGenReply = FastifyReply;
+export type FastifyIdRequest = FastifyRequest<{ Params: { id: string } }>;
 
 export type TFMAPluginAsync<T extends TFMAPluginOptions> =
     FastifyPluginAsync<T> & {
@@ -85,7 +91,8 @@ export type TFMASchemaVerbs =
     | 'routePut'
     | 'routeDelete'
     | 'routePatch'
-    | 'routeList';
+    | 'routeList'
+    | 'routeSub';
 
 export type TFMASchema = TFMAModelMethods & {
     summary: string;
