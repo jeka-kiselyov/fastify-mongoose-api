@@ -1,6 +1,6 @@
 import type { TFMASchemas, ajvSchema } from '../types.js';
 
-const defaultSchemas = (modelName: string): TFMASchemas => {
+const defaultSchemas = (modelName: string): Partial<TFMASchemas> => {
     return {
         routeGet: {
             summary: 'Get details of single ' + modelName,
