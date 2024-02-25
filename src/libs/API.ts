@@ -7,10 +7,10 @@ import { TFMAApiOptions, TFMASchemas, IAPI, TFMAModel, TFMAModelMethodsKeys } fr
 class API implements IAPI {
     private _models: TFMAApiOptions['models'];
     private _fastify: TFMAApiOptions['fastify'];
-    private _checkAuth: TFMAApiOptions['checkAuth'];
+    private _checkAuth: TFMAApiOptions['checkAuth'] | undefined;
     private _exposeVersionKey: TFMAApiOptions['exposeVersionKey'];
-    private _defaultModelMethods: typeof DefaultModelMethods;
-    private _exposeModelName: TFMAApiOptions['exposeModelName'];
+    // private _defaultModelMethods: typeof DefaultModelMethods;
+    // private _exposeModelName: TFMAApiOptions['exposeModelName'];
     private _methods: TFMAApiOptions['methods'];
     private _apiRouters: Record<string, APIRouter>;
     private schemas: TFMASchemas[];
@@ -22,15 +22,15 @@ class API implements IAPI {
     constructor(params: TFMAApiOptions) {
         this._models = params.models;
         this._fastify = params.fastify;
-        this._checkAuth = params.checkAuth || undefined;
-        this._defaultModelMethods = DefaultModelMethods;
+        this._checkAuth = params.checkAuth;
+        // this._defaultModelMethods = DefaultModelMethods;
 
         this._exposeVersionKey = params.exposeVersionKey; // default = true
         if (this._exposeVersionKey === undefined) {
             this._exposeVersionKey = true;
         }
 
-        this._exposeModelName = params.exposeModelName || false; // default = false
+        // this._exposeModelName = params.exposeModelName || false; // default = false
 
         this._methods = params.methods || [
             'list',
@@ -78,9 +78,6 @@ class API implements IAPI {
         if (params.setDefaults === false) {
             setDefaults = false;
         }
-
-        const checkAuth = params.checkAuth ? params.checkAuth : null;
-        const prefix = params.prefix ? params.prefix : null;
         if (model.schema) {
             if (setDefaults) {
                 this.decorateModelWithDefaultAPIMethods(model);
@@ -93,8 +90,8 @@ class API implements IAPI {
                     models: this._models,
                     model: model,
                     methods: this._methods,
-                    checkAuth: checkAuth,
-                    prefix: prefix,
+                    checkAuth: this._checkAuth,
+                    prefix: params.prefix, // Update the type of prefix to allow for undefined
                     fastify: this._fastify,
                     schema: this.schemas
                         ? this.schemas.find(
@@ -104,7 +101,7 @@ class API implements IAPI {
                                     .toLowerCase()
                                     .replace(/s$/g, '')
                         )
-                        : {}
+                        : undefined
                 });
 
                 model.__api = this;
