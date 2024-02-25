@@ -2,6 +2,7 @@ import { SchemaTypeOptions as MongooseSchemaTypeOptions, Model as MongooseModel 
 import type { TFMPModel } from 'fastify-mongoose-plugin';
 import type API from './libs/API.js';
 import type DefaultModelMethods from './libs/DefaultModelMethods.js';
+
 import type {
     FastifyInstance,
     FastifyPluginAsync,
@@ -30,12 +31,12 @@ export type TFMAMethods = 'list' | 'get' | 'post' | 'patch' | 'put' | 'delete';
 
 export type TFMAPluginOptions = FastifyPluginOptions & {
     models: Record<string, TFMAModel>;
-    prefix?: string;
+    prefix?: string | undefined;
     setDefaults?: boolean;
     exposeVersionKey?: boolean;
     exposeModelName?: boolean | string;
-    methods?: TFMAMethods[];
-    checkAuth?: (request: any, reply: any) => boolean;
+    methods?: TFMAMethods[] | undefined;
+    checkAuth?: ((request: any, reply: any) => boolean) | undefined;
     schemas?: TFMASchemas[];
     schemaDirPath?: string;
 };
@@ -43,7 +44,7 @@ export type TFMAPluginOptions = FastifyPluginOptions & {
 // TODO: restrict to only apirouter parameters
 export type TFMAApiRouterOptions = TFMAApiOptions & {
     model: TFMAModel;
-    schema: TFMASchemas;
+    schema: TFMASchemas | undefined;
 }
 
 export interface IAPI { }
@@ -129,7 +130,8 @@ export type TFMAModelMethods<T=any> = {
 }
 
 export type TFMAModel<T=any> = 
-    Omit<Partial<MongooseModel<T>>, 'modelName'> &
+    //Omit<Partial<MongooseModel<T>>, 'modelName'> &
+    Omit<MongooseModel<T>, 'modelName'> &
     Required<Pick<MongooseModel<T>, 'modelName'>> 
     & TFMAModelMethods &
     { __api?: API;}
