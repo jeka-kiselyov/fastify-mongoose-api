@@ -1,13 +1,13 @@
 import { defaultSchemas } from './DefaultSchemas.js'
-import type { FastifyGenRequest, FastifyGenReply, FastifyIdRequest, TFMAModelMethods, TFMAApiRouterOptions, TFMAModel, TFMASchemas, TFMASchema, TFMASchemaVerbs, TFMAModelMethodsKeys } from '../types.js';
+import type { FastifyGenRequest, FastifyGenReply, FastifyIdRequest, TFMAModelMethods,TFMAApiOptions, TFMAApiRouterOptions, TFMAModel, TFMASchemas, TFMASchema, TFMASchemaVerbs, TFMAModelMethodsKeys } from '../types.js';
 const capFL = (param: string): string => param.charAt(0).toUpperCase() + param.slice(1);
 
 class APIRouter {
     private _fastify: TFMAApiRouterOptions['fastify'];
     private _model: TFMAModel;
     private _methods: TFMAApiRouterOptions['methods'];
-    private _checkAuth: TFMAApiRouterOptions['checkAuth'] | null;
-    private _schema: TFMASchemas | undefined;
+    private _checkAuth: TFMAApiRouterOptions['checkAuth'];
+    private _schema: TFMAApiRouterOptions['schema'];
     private _modelName: string;
     private _prefix: string;
     private _collectionName: string;
@@ -19,13 +19,13 @@ class APIRouter {
         this._fastify = params.fastify;
         this._model = params.model;
         this._methods = params.methods;
-        this._checkAuth = params.checkAuth || null;
-        this._schema = params.schema || undefined;
+        this._checkAuth = params.checkAuth;
+        this._schema = params.schema;
         this._registerReferencedSchemas();
 
         this._modelName = this._model.modelName;
 
-        this._prefix = params.prefix || '/api/';
+        this._prefix = params.prefix ?? '/api/';
 
         this._collectionName = this._model.collection!.name;
 
@@ -298,14 +298,14 @@ class APIRouter {
         }
     }
 
-    async routePost(request, reply) {
+    async routePost(request:FastifyIdRequest, reply: FastifyGenReply) {
         let doc = await this._model.apiPost(request.body, request);
         await this.populateIfNeeded(request, doc);
 
         reply.send(await this.docToAPIResponse(doc, request));
     }
 
-    async routeGet(request, reply) {
+    async routeGet(request: FastifyIdRequest, reply: FastifyGenReply) {
         let id = request.params.id || null;
 
         let doc = null;
@@ -324,7 +324,7 @@ class APIRouter {
         }
     }
 
-    async routePut(request, reply) {
+    async routePut(request: FastifyIdRequest, reply: FastifyGenReply) {
         let id = request.params.id || null;
 
         let doc = null;
@@ -344,11 +344,11 @@ class APIRouter {
         }
     }
 
-    async routePatch(request, reply) {
+    async routePatch(request: FastifyIdRequest, reply: FastifyGenReply) {
         await this.routePut(request, reply);
     }
 
-    async routeDelete(request, reply) {
+    async routeDelete(request:FastifyIdRequest, reply: FastifyGenReply) {
         let id = request.params.id || null;
         let doc = null;
         try {
