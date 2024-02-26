@@ -1,4 +1,7 @@
-import { SchemaTypeOptions as MongooseSchemaTypeOptions, Model as MongooseModel } from 'mongoose';
+import { SchemaTypeOptions as MongooseSchemaTypeOptions, Model as MongooseModel, 
+    QueryWithHelpers as MongooseQueryWithHelpers, QuerySelector as MongooseQuerySelector,
+    FilterQuery as MongooseFilterQuery 
+} from 'mongoose';
 import type { TFMPModel } from 'fastify-mongoose-plugin';
 import type API from './libs/API.js';
 import type DefaultModelMethods from './libs/DefaultModelMethods.js';
@@ -19,7 +22,10 @@ declare module 'fastify' {
 
 export type FastifyGenRequest = FastifyRequest;
 export type FastifyGenReply = FastifyReply;
-export type FastifyIdRequest = FastifyRequest<{ Params: { id: string } }>;
+export type FastifyIdRequest = FastifyRequest<{
+    Params: { id: string },
+    Querystring: Record<keyof TFMAFilters, string>
+}>;
 
 export type TFMAPluginAsync<T extends TFMAPluginOptions> =
     FastifyPluginAsync<T> & {
@@ -66,11 +72,12 @@ export type TFMAFiletrsSort = {
 };
 
 export type TFMAFiltersProjection = {
-    projection?: string;
+    fields?: string;
 };
 
 export type TFMAFiltersPopulate = {
     populate?: string;
+    "populate[]"?: string;
 };
 
 export type TFMAFiltersSearch = {
@@ -121,7 +128,7 @@ export type TFMASchema = TFMAModelMethods & {
 
 export type TFMAModelMethodsKeys = 'apiValues' | 'apiPost' | 'apiPut' | 'apiDelete' | 'apiSubRoutes';
 
-export type TFMAModelMethods<T=any> = {
+export type TFMAModelMethods<T = any> = {
     apiValues?: (request: any) => Promise<T> //! Not sure
     apiPost?: (data: T) => Promise<T>;
     apiPut?: (data: T) => Promise<T>;
@@ -129,12 +136,12 @@ export type TFMAModelMethods<T=any> = {
     apiSubRoutes?: () => any; // TODO: define return type
 }
 
-export type TFMAModel<T=any> = 
+export type TFMAModel<T = any> =
     //Omit<Partial<MongooseModel<T>>, 'modelName'> &
     Omit<MongooseModel<T>, 'modelName'> &
-    Required<Pick<MongooseModel<T>, 'modelName'>> 
+    Required<Pick<MongooseModel<T>, 'modelName'>>
     & TFMAModelMethods &
-    { __api?: API;}
+    { __api?: API; }
 
 // define a schema element for db and route element
 // it's an item of the schemas config option
@@ -151,6 +158,13 @@ export type TFMASchemas =
 // describe a mongoose schema for the model
 // see: https://www.geeksforgeeks.org/mongoose-schematype-options/
 export type MongooseSchema<T = any> = Record<string, MongooseSchemaTypeOptions<T>>;
+
+// mongoose query object (used in ApiRouter.getListResponse)
+export type QueryList<T = any, K = any> = MongooseQueryWithHelpers<T, K>;
+export type QuerySelector<T = any> = keyof MongooseQuerySelector<T>;
+export type QueryFilter<T=any> = MongooseFilterQuery<T>;
+
+
 
 /// AJV elements
 
