@@ -88,7 +88,7 @@ const defaultSchemas = (modelName: string): Partial<TFMASchemas> => {
                         description:
                             'Performs search by full text mongodb indexes'
                     },
-                    projection: {
+                    fields: {
                         type: 'string',
                         description: 'Projection options of mongoose'
                     },
