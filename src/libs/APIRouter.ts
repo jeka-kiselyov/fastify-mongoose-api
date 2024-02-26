@@ -1,5 +1,6 @@
 import { defaultSchemas } from './DefaultSchemas.js'
-import type { FastifyGenRequest, FastifyGenReply, FastifyIdRequest, TFMAModelMethods,TFMAApiOptions, TFMAApiRouterOptions, TFMAModel, TFMASchemas, TFMASchema, TFMASchemaVerbs, TFMAModelMethodsKeys } from '../types.js';
+import type { FastifyGenRequest, FastifyGenReply, FastifyIdRequest, TFMAModelMethods, TFMAApiRouterOptions, TFMAModel,  TFMASchema, TFMASchemaVerbs, TFMAModelMethodsKeys, QueryList, QuerySelector, QueryFilter } from '../types.js';
+import { Query } from 'mongoose';
 const capFL = (param: string): string => param.charAt(0).toUpperCase() + param.slice(1);
 
 class APIRouter {
@@ -67,7 +68,9 @@ class APIRouter {
         if (this._model['apiSubRoutes']) {
             this._apiSubRoutesFunctions = this._model['apiSubRoutes']();
 
-            for (let key of Object.keys(this._apiSubRoutesFunctions)) {
+            const keys = Object.keys(this._apiSubRoutesFunctions) as TFMAModelMethodsKeys[];
+
+            for (const key of keys) {
                 this._fastify.get(
                     path + '/:id/' + key,
                     {},
@@ -86,14 +89,14 @@ class APIRouter {
                 ...this._defaultSchemas[funcName],
                 ...optSchema,
                 response: {
-                    ...this._defaultSchemas[funcName].response,
+                    ...this._defaultSchemas[funcName]!.response,
                     ...(optSchema.response || {})
                 }
             }
         };
     }
 
-    routeHandler(funcName: TFMASchemaVerbs, subRouteName: TFMAModelMethodsKeys | null = null) {
+    routeHandler(funcName: Exclude<TFMASchemaVerbs, "routeSub">, subRouteName: TFMAModelMethodsKeys | null = null) {
         return async (request: FastifyGenRequest, reply: FastifyGenReply) => {
             if (typeof this._checkAuth === 'function') {
                 await this._checkAuth(request, reply);
@@ -101,7 +104,11 @@ class APIRouter {
             if (subRouteName) {
                 return await this.routeSub(subRouteName, request as FastifyIdRequest, reply);
             } else {
-                return await this[funcName](request, reply);
+                if (funcName === 'routeList') {
+                    return await this[funcName](request, reply);
+                } else {
+                    return await this[funcName](request as FastifyIdRequest, reply);
+                }
             }
         };
     }
@@ -145,7 +152,7 @@ class APIRouter {
         }
     }
 
-    async getListResponse(query, request) {
+    async getListResponse(query: QueryList, request: FastifyIdRequest) {
         let offset = request.query.offset
             ? parseInt(request.query.offset, 10)
             : 0;
@@ -168,11 +175,12 @@ class APIRouter {
         let ret = {};
 
         if (search) {
-            query = query.and({ $text: { $search: search } });
+            query = query.and([{ $text: { $search: search } }]);
         }
 
         if (filter) {
-            let splet = ('' + filter).split('=');
+            const filterParsed = ('' + filter).split('=');
+            const splet = filterParsed as [string, string | boolean];
             if (splet.length < 2) {
                 splet[1] = true; /// default value
             }
@@ -197,13 +205,13 @@ class APIRouter {
                 '$exists',
                 '$regex',
                 '$options'
-            ];
-            const sanitize = function (v) {
+            ] as QuerySelector[];
+            const sanitize = function (v: QueryFilter|Array<QueryFilter>) {
                 if (v instanceof Object) {
-                    for (var key in v) {
+                    for (const key in v) {
                         if (
                             /^\$/.test(key) &&
-                            allowedMethods.indexOf(key) === -1
+                            allowedMethods.indexOf(key as QuerySelector) === -1
                         ) {
                             throw new Error('Invalid where method: ' + key);
                         } else {
@@ -214,7 +222,7 @@ class APIRouter {
                 return v;
             };
 
-            const whereAsObject = sanitize(JSON.parse(where));
+            const whereAsObject = sanitize(JSON.parse(where)) as unknown as Array<QueryFilter>;
 
             query.and(whereAsObject);
         }
@@ -222,8 +230,8 @@ class APIRouter {
         if (match) {
             let splet = ('' + match).split('=');
             if (splet.length == 2) {
-                const matchOptions = {};
-                matchOptions[splet[0]] = { $regex: splet[1] };
+                const matchOptions: Array<QueryFilter> = [] ;
+                splet[0] && splet[1] && (matchOptions.push({[splet[0]]: { $regex: splet[1] }}));
                 query = query.and(matchOptions);
             }
         }
@@ -266,7 +274,7 @@ class APIRouter {
         return ret;
     }
 
-    async routeList(request, reply) {
+    async routeList(request: FastifyGenRequest, reply: FastifyGenReply) {
         let query = this._model.find();
         reply.send(await this.getListResponse(query, request, reply));
     }
