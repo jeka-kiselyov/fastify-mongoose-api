@@ -605,6 +605,7 @@ test('DELETE item test', async t => {
     response = await bw.inject(t, {
         method: 'DELETE',
         url: '/api/books/' + bookFromDb.id,
+        body: { id: bookFromDb.id }, // https://github.com/fastify/fastify/pull/5419
         headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
 
@@ -613,6 +614,7 @@ test('DELETE item test', async t => {
     response = await bw.inject(t, {
         method: 'GET',
         url: '/api/authors/' + bookFromDb.author.id + '/books',
+        body: { id: bookFromDb.id }, // https://github.com/fastify/fastify/pull/5419
         headers: { 'Content-Type': 'application/json; charset=utf-8' }
     });
 
@@ -630,6 +632,17 @@ test('DELETE single item 404', async t => {
         {
             method: 'DELETE',
             url: '/api/books/SOMEWRONGID',
+            body: { id: 'SOMEWRONGID' }, // https://github.com/fastify/fastify/pull/5419
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        },
+        404
+    );
+    await bw.inject(
+        t,
+        {
+            method: 'DELETE',
+            url: '/api/books/SOMEWRONGID',
+            body: {}, // https://github.com/fastify/fastify/pull/5419
             headers: { 'Content-Type': 'application/json; charset=utf-8' }
         },
         404
