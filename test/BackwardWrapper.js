@@ -47,9 +47,13 @@ class BackwardWrapper {
         }
     }
 
-    async inject(t, injectOptions, expectedStatusCode = 200) {
+    async inject(t, injectOptions, expectedStatusCode = 200, debug = false) {
         const response = await this.fastify.inject(injectOptions);
 
+        if (debug) {
+            console.error(response);
+        }
+        
         t.equal(
             response.statusCode,
             expectedStatusCode,

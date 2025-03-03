@@ -71,10 +71,13 @@ let schema_full = {
     routeList: {
         response: {
             200: {
-                total: { type: 'integer', example: '1' },
-                items: {
-                    type: 'array',
-                    items: { $ref: `${collection}#` }
+                type: 'object',
+                properties: {
+                    total: { type: 'integer' },
+                    items: {
+                        type: 'array',
+                        items: { $ref: `${collection}#` }
+                    }
                 }
             }
         }
@@ -292,7 +295,7 @@ test('POST valid birthday', async t => {
 
     response = await bw.inject(t, {
         method: 'GET',
-        url: '/api/authors'
+        url: '/api/authors',
     });
 
     t.match(
