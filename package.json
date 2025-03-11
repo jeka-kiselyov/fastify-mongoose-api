@@ -1,6 +1,6 @@
 {
   "name": "fastify-mongoose-api",
-  "version": "1.2.24",
+  "version": "1.2.25",
   "description": "API for Mongoose models in one line of code",
   "main": "fastify-mongoose-api.js",
   "scripts": {
