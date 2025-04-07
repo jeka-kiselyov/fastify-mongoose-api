@@ -5,7 +5,7 @@ const path = require('path');
 
 const loadSchemasFromPath = (schemaDirPath, filterFn) => {
     const schemasFromPath = [];
-    const schemaFiles = walkDir(schemaDirPath, filterFn); 
+    const schemaFiles = walkDir(schemaDirPath, filterFn);
     schemaFiles.forEach(file => {
         const schema = require(file);
         schemasFromPath.push(schema);
@@ -20,7 +20,7 @@ const walkDir = (schemaDirPath, filterFn, fileList = []) => {
         const stat = fs.statSync(pathFile);
         if (stat.isDirectory()) {
             fileList = walkDir(pathFile, filterFn, fileList);
-        } else if (filterFn(pathFile, file)) { 
+        } else if (filterFn(schemaDirPath, file)) {
             fileList.push(pathFile);
         }
     });
