@@ -159,7 +159,12 @@ class APIRouter {
         let ret = {};
 
         if (search) {
-            query = query.and({ $text: { $search: search } }, { score: { $meta: "textScore" } }).sort( { score: { $meta: "textScore" } } );
+            query = query
+                .and(
+                    { $text: { $search: search } },
+                    { score: { $meta: 'textScore' } }
+                )
+                .sort({ score: { $meta: 'textScore' } });
         }
 
         if (filter) {

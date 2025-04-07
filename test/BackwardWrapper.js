@@ -53,7 +53,7 @@ class BackwardWrapper {
         if (debug) {
             console.error(response);
         }
-        
+
         t.equal(
             response.statusCode,
             expectedStatusCode,

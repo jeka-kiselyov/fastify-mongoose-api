@@ -38,8 +38,9 @@ class API {
 
         this.schemas = params.schemas || [];
         if (params.schemaDirPath) {
-            const schemaPathFilter = params.schemaPathFilter 
-                || ((pathFile, file) => file.endsWith('.js')); // Default filter
+            const schemaPathFilter =
+                params.schemaPathFilter ||
+                ((pathFile, file) => file.endsWith('.js')); // Default filter
             this.schemas = [
                 ...this.schemas,
                 ...loadSchemasFromPath(params.schemaDirPath, schemaPathFilter)

@@ -295,7 +295,7 @@ test('POST valid birthday', async t => {
 
     response = await bw.inject(t, {
         method: 'GET',
-        url: '/api/authors',
+        url: '/api/authors'
     });
 
     t.match(
