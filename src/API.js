@@ -37,11 +37,14 @@ class API {
         this._registerReferencedSchemas();
 
         this.schemas = params.schemas || [];
-        if (params.schemaDirPath)
+        if (params.schemaDirPath) {
+            const schemaPathFilter = params.schemaPathFilter 
+                || ((pathFile, file) => file.endsWith('.js')); // Default filter
             this.schemas = [
                 ...this.schemas,
-                ...loadSchemasFromPath(params.schemaDirPath)
+                ...loadSchemasFromPath(params.schemaDirPath, schemaPathFilter)
             ];
+        }
 
         for (let key of Object.keys(this._models)) {
             this.addModel(this._models[key], params);
