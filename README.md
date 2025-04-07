@@ -132,7 +132,15 @@ Enable support for fastify [validation and serialization](#validation-and-serial
 
 #### .schemaDirPath: string
 
-Directory where it's possible to define schemas for [validation and serialization](#validation-and-serialization) in separate files. The directory will be trasverse includes all subdirectories.
+Directory where it's possible to define schemas for [validation and serialization](#validation-and-serialization) in separate files. The directory will be trasverse includes all subdirectories using .schemaPathFilter as filter function to determinate if a file must be included.
+
+#### .schemaPathFilter: function (default `(pathFile, file) => file.endsWith('.js')`)
+
+A boolean function called for every file in `schemaDirPath` to determinate if file must be included. As default, all `.js` files
+are added. 
+
+* `pathFile` is the path of the file
+* `file` is the fileName with extension.
 
 ## Sample Application
 
@@ -475,6 +483,8 @@ const schemas = {
 };
 ```
 If `.schemas` and `schemaDirPath` are used together, the schemas defined in `.schemas` have precedence to there loaded in `schemaDirPath`.
+
+To filter which files must be included in `schemaDirPath` a boolean function `schemaPathFilter` can be used.
 
 The generated validation and serialization is compatible with other plugins like [@fastify/swagger](https://github.com/fastify/fastify-swagger) and [@fastify/swagger-ui](https://github.com/fastify/fastify-swagger-ui) for automatically serving OpenAPI v2/v3 schemas
 
