@@ -31,6 +31,7 @@
   "dependencies": {
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
+    "import-sync": "^2.2.3",
     "mongoose": "^8.11.0"
   },
   "devDependencies": {
