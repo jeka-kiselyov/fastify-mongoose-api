@@ -108,7 +108,7 @@ const createSchemasInTmpPath = () => {
     fs.mkdirSync(path.join(tmpPath, 'subdir'));
     fs.writeFileSync(
         path.join(tmpPath, 'subdir', 'books.schema.mjs'),
-        'export default' + JSON.stringify(schema_books)
+        'export default ' + JSON.stringify(schema_books)
     );
     return tmpPath;
 };
