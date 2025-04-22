@@ -176,7 +176,7 @@ test('POST author item test', async t => {
         { firstName: 'Hutin', lastName: 'Puylo' },
         'Listed same'
     );
-    t.equal(response.json().total, 1, 'There are author now');
+    t.equal(response.json().total, 1, 'There is 1 author now');
 });
 
 test('POST only firstName', async t => {
