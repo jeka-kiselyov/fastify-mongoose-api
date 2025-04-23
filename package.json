@@ -1,6 +1,6 @@
 {
   "name": "fastify-mongoose-api",
-  "version": "1.2.26",
+  "version": "1.2.27",
   "description": "API for Mongoose models in one line of code",
   "main": "fastify-mongoose-api.js",
   "scripts": {
@@ -31,12 +31,16 @@
   "dependencies": {
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
+    "import-sync": "^2.2.3",
     "mongoose": "^8.11.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.25.0",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-prettier": "^5.1.3",
+    "globals": "^16.0.0",
     "grunt": "^1.6.1",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-env": "^1.0.1",

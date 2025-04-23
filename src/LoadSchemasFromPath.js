@@ -2,13 +2,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const importSync = require('import-sync');
 
 const loadSchemasFromPath = (schemaDirPath, filterFn) => {
     const schemasFromPath = [];
     const schemaFiles = walkDir(schemaDirPath, filterFn);
     schemaFiles.forEach(file => {
-        const schema = require(file);
-        schemasFromPath.push(schema);
+        const schema = importSync(file);
+        schemasFromPath.push(schema.default || schema);
     });
     return schemasFromPath;
 };

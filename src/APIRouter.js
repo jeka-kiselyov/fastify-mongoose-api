@@ -102,7 +102,7 @@ class APIRouter {
         let doc = null;
         try {
             doc = await this._model.findById(id).exec();
-        } catch (e) {
+        } catch {
             doc = null;
         }
 
@@ -307,7 +307,7 @@ class APIRouter {
         let doc = null;
         try {
             doc = await this._model.findById(id).exec();
-        } catch (e) {
+        } catch {
             doc = null;
         }
 
@@ -326,7 +326,7 @@ class APIRouter {
         let doc = null;
         try {
             doc = await this._model.findById(id).exec();
-        } catch (e) {
+        } catch {
             doc = null;
         }
 
@@ -349,7 +349,7 @@ class APIRouter {
         let doc = null;
         try {
             doc = await this._model.findById(id).exec();
-        } catch (e) {
+        } catch {
             doc = null;
         }
 
