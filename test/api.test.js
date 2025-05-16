@@ -320,13 +320,13 @@ test('GET collection projection', async t => {
     t.equal(response.json().total, 2, 'Total is everything');
     t.equal(response.json().items.length, 2, 'API returns everything');
     t.same(
-        Object.keys(response.json().items[0]),
-        ['_id', 'created', 'biography'],
+        Object.keys(response.json().items[0]).sort(),
+        ['_id', 'created', 'biography'].sort(),
         'Exclude projection fields'
     );
     t.same(
-        Object.keys(response.json().items[1]),
-        ['_id', 'created', 'biography'],
+        Object.keys(response.json().items[1]).sort(),
+        ['_id', 'created', 'biography'].sort(),
         'Exclude projection fields'
     );
 
