@@ -295,7 +295,15 @@ class APIRouter {
     }
 
     async routePost(request, reply) {
-        let doc = await this._model.apiPost(request.body, request);
+        let doc;
+        if (
+            request.headers['x-http-method'] &&
+            (request.headers['x-http-method'] = ~/^coa$/i)
+        ) {
+            doc = await this._model.apiCoU(request.body, request);
+        } else {
+            doc = await this._model.apiPost(request.body, request);
+        }
         await this.populateIfNeeded(request, doc);
 
         reply.send(await this.docToAPIResponse(doc, request));

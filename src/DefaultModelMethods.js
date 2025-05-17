@@ -105,24 +105,31 @@ class DefaultModelMethods {
         /// this points to model (schema.statics.)
         let doc = new this();
 
-        this.schema.eachPath(pathname => {
-            if (data[pathname] !== undefined) {
-                if (pathname.includes('.')) {
-                    // nested document
-                    const keys = pathname.split('.');
-                    const lastKey = keys.pop();
-                    const lastObj = keys.reduce(
-                        (doc, key) => (doc[key] = doc[key] || {}),
-                        doc
-                    );
-                    lastObj[lastKey] = data[pathname];
-                } else {
-                    doc[pathname] = data[pathname];
-                }
-            }
-        });
+        doc = assignDataToDoc(this.schema, doc, data);
 
         await doc.save();
+        return doc;
+    }
+
+    /**
+     * [apiCoU description]
+     * @param  Object data [description]
+     * @return Document      [description]
+     */
+    static async apiCoU(data) {
+        /// this points to model (schema.statics.)
+        let doc = new this();
+
+        doc = assignDataToDoc(this.schema, doc, data);
+        await doc.validate();
+        doc = await this.findByIdAndUpdate(doc._id, doc, {
+            upsert: true,
+            new: true,
+            runValidators: true,
+            setDefaultsOnInsert: true,
+            rawResult: true
+        });
+
         return doc;
     }
 
@@ -267,5 +274,31 @@ class DefaultModelMethods {
         await this.deleteOne();
     }
 }
+
+/**
+ * Assigns values from data to doc based on schema paths, handling nested paths.
+ * @param {Schema} schema - Mongoose schema object
+ * @param {Object} doc - Document to assign values to
+ * @param {Object} data - Source data object
+ */
+const assignDataToDoc = (schema, doc, data) => {
+    schema.eachPath(pathname => {
+        if (data[pathname] !== undefined) {
+            if (pathname.includes('.')) {
+                // nested document
+                const keys = pathname.split('.');
+                const lastKey = keys.pop();
+                const lastObj = keys.reduce(
+                    (doc, key) => (doc[key] = doc[key] || {}),
+                    doc
+                );
+                lastObj[lastKey] = data[pathname];
+            } else {
+                doc[pathname] = data[pathname];
+            }
+        }
+    });
+    return doc;
+};
 
 module.exports = DefaultModelMethods;
