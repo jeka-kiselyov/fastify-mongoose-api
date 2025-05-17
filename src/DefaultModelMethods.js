@@ -105,7 +105,7 @@ class DefaultModelMethods {
         /// this points to model (schema.statics.)
         let doc = new this();
 
-        doc = assignDataToDoc(this.schema, doc, data);
+        doc = assignDataToDocPostForReplace(this.schema, doc, data);
 
         await doc.save();
         return doc;
@@ -120,9 +120,44 @@ class DefaultModelMethods {
         /// this points to model (schema.statics.)
         let doc = new this();
 
-        doc = assignDataToDoc(this.schema, doc, data);
+        doc = assignDataToDocForUpdate(doc, data);
         await doc.validate();
-        doc = await this.findByIdAndUpdate(doc._id, doc, {
+
+        // in save-mode, a field set to null is deleted, in update mode, it requires to use $unset
+        // so we need to delete it from doc._doc and add it to $unset
+        const keysToDelete = Object.keys(data).filter(key => doc[key] === null);
+        keysToDelete.forEach(key => delete doc._doc[key]);
+
+        doc = await this.findByIdAndUpdate(
+            doc._id,
+            {
+                $set: doc,
+                $unset: Object.fromEntries(keysToDelete.map(key => [key, '']))
+            },
+            {
+                upsert: true,
+                new: true,
+                runValidators: true,
+                setDefaultsOnInsert: true,
+                rawResult: true
+            }
+        );
+
+        return doc;
+    }
+
+    /**
+     * [apiCoR description]
+     * @param  Object data [description]
+     * @return Document      [description]
+     */
+    static async apiCoR(data) {
+        /// this points to model (schema.statics.)
+        let doc = new this();
+
+        doc = assignDataToDocPostForReplace(this.schema, doc, data);
+        await doc.validate();
+        doc = await this.findOneAndReplace({ _id: doc._id }, doc, {
             upsert: true,
             new: true,
             runValidators: true,
@@ -235,34 +270,8 @@ class DefaultModelMethods {
      */
     async apiPut(data) {
         //// this points to document (schema.methods.)
-        this.schema.eachPath(pathname => {
-            let newValue = undefined;
-            let isChanged = false;
-            if (data[pathname] !== undefined) {
-                newValue = data[pathname];
-                isChanged = true;
-            } else if (data[pathname] === null) {
-                newValue = undefined;
-                isChanged = true;
-            }
-            if (isChanged) {
-                if (pathname.includes('.')) {
-                    let doc = this;
-                    // nested document
-                    const keys = pathname.split('.');
-                    const lastKey = keys.pop();
-                    const lastObj = keys.reduce(
-                        (doc, key) => (doc[key] = doc[key] || {}),
-                        doc
-                    );
-                    lastObj[lastKey] = newValue;
-                } else {
-                    this[pathname] = newValue;
-                }
-            }
-        });
-
-        await this.save();
+        const model = assignDataToDocForUpdate(this, data);
+        await model.save();
     }
 
     /**
@@ -281,7 +290,7 @@ class DefaultModelMethods {
  * @param {Object} doc - Document to assign values to
  * @param {Object} data - Source data object
  */
-const assignDataToDoc = (schema, doc, data) => {
+const assignDataToDocPostForReplace = (schema, doc, data) => {
     schema.eachPath(pathname => {
         if (data[pathname] !== undefined) {
             if (pathname.includes('.')) {
@@ -301,4 +310,33 @@ const assignDataToDoc = (schema, doc, data) => {
     return doc;
 };
 
+const assignDataToDocForUpdate = (model, data) => {
+    model.schema.eachPath(pathname => {
+        let newValue = undefined;
+        let isChanged = false;
+        if (data[pathname] !== undefined) {
+            newValue = data[pathname];
+            isChanged = true;
+        } else if (data[pathname] === null) {
+            newValue = undefined;
+            isChanged = true;
+        }
+        if (isChanged) {
+            if (pathname.includes('.')) {
+                let doc = model;
+                // nested document
+                const keys = pathname.split('.');
+                const lastKey = keys.pop();
+                const lastObj = keys.reduce(
+                    (doc, key) => (doc[key] = doc[key] || {}),
+                    doc
+                );
+                lastObj[lastKey] = newValue;
+            } else {
+                model[pathname] = newValue;
+            }
+        }
+    });
+    return model;
+};
 module.exports = DefaultModelMethods;

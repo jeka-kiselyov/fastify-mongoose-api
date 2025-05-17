@@ -296,11 +296,23 @@ class APIRouter {
 
     async routePost(request, reply) {
         let doc;
-        if (
-            request.headers['x-http-method'] &&
-            (request.headers['x-http-method'] = ~/^coa$/i)
-        ) {
-            doc = await this._model.apiCoU(request.body, request);
+        if (request.headers['x-http-method']) {
+            const xhttpMethod = request.headers['x-http-method'].toLowerCase();
+
+            switch (xhttpMethod) {
+                case 'cou':
+                    doc = await this._model.apiCoU(request.body, request);
+                    break;
+                case 'cor':
+                    doc = await this._model.apiCoR(request.body, request);
+                    break;
+                default:
+                    // error
+                    reply.status(405).send({
+                        message: `Invalid HTTP method '${xhttpMethod}' for this endpoint`
+                    });
+                    return;
+            }
         } else {
             doc = await this._model.apiPost(request.body, request);
         }
