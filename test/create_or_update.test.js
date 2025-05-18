@@ -276,6 +276,6 @@ test('POST authors with CoU mode', async t => {
     t.equal(
         response.json().lastName,
         undefined,
-        'and so lastNname not exists in document'
+        'and so lastName not exists in document'
     );
 });
