@@ -552,9 +552,9 @@ This is especially useful in scenarios where the client may not know if the docu
 
 ### Why Use CoU/CoR Mode?
 
-- **Simplifies client logic:** Instead of checking if a document exists and then deciding whether to send a POST (create) or PUT(replace)/PATCH(update) request, you can always send the same request and let the server handle it.
-- **Reduces API calls:** You avoid an extra round-trip to check for existence before creating or updating.
-- **Atomic operation:** The server ensures that the operation is performed atomically, reducing the risk of race conditions.
+- 🧩 **Simplifies client logic:** Instead of checking if a document exists and then deciding whether to send a POST (create) or PUT(replace)/PATCH(update) request, you can always send the same request and let the server handle it.
+- 📉 **Reduces API calls:** You avoid an extra round-trip to check for existence before creating or updating.
+- ⚛️ **Atomic operation:** The server ensures that the operation is performed atomically, reducing the risk of race conditions.
 
 ### How It Works the CoU-mode
 
