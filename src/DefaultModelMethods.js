@@ -138,8 +138,7 @@ class DefaultModelMethods {
                 upsert: true,
                 new: true,
                 runValidators: true,
-                setDefaultsOnInsert: true,
-                rawResult: true
+                setDefaultsOnInsert: true
             }
         );
 
@@ -161,8 +160,7 @@ class DefaultModelMethods {
             upsert: true,
             new: true,
             runValidators: true,
-            setDefaultsOnInsert: true,
-            rawResult: true
+            setDefaultsOnInsert: true
         });
 
         return doc;
