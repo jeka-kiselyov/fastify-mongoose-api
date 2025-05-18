@@ -119,6 +119,12 @@ class API {
             if (!model.apiPost) {
                 model.apiPost = this._defaultModelMethods.apiPost;
             }
+            if (!model.apiCoU) {
+                model.apiCoU = this._defaultModelMethods.apiCoU;
+            }
+            if (!model.apiCoR) {
+                model.apiCoR = this._defaultModelMethods.apiCoR;
+            }
             if (!model.apiSubRoutes) {
                 model.apiSubRoutes = this._defaultModelMethods.apiSubRoutes;
             }

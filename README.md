@@ -28,6 +28,7 @@ await fastify.listen(8080); /// running the server
 - [Initialization and parameters](#initialization)
 - Sample application ([Source code](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app), [Live demo](https://fastify-mongoose-api-app.herokuapp.com/))
 - [Auto generated method routes for sample application](#sample-application-generated-api-routes)
+- [Create or Update mode (CoU-mode) or Replace mode (CoR-mode)](#create-or-update-mode-cou-mode-or-replace-mode-cor-mode)
 - [POST/PUT on frontend samples](#postput-sample-on-frontend)
 - [LIST methods response](#list-method-response-sample)
 - [LIST methods options (pagination, projection, sorting, filtering, complex where, search, regex match, populate)](#list-method-options)
@@ -195,12 +196,14 @@ await fastify.listen(8080);
 ```
 ### Sample application generated API routes
 
-|               | Method        | URL   |       |
+|               | Method        | URL   | Info  |
 | ------------- | ------------- | ----- | ----- |
 | List all authors | GET | /api/authors | Pagination, sorting, search and filtering [are ready](#list-method-options) |
 | List all books | GET | /api/books | Want to get populated refs in response? [You can](#populate) |
 | Create new author | POST | /api/authors | Send properties with post body [sample](https://github.com/jeka-kiselyov/sample-fastify-mongoose-api-app/blob/master/frontend/src/includes/api.js#L23) |
 | Create new book | POST | /api/books |  |
+| Create or update a book | POST | /api/books | [CoU-mode](#create-or-update-mode-cou-mode-or-replace-mode-cor-mode) with `X-HTTP-Method: CoU`
+| Create or replace a book | POST | /api/books | [CoR-mode](#create-or-update-mode-cou-mode-or-replace-mode-cor-mode) with `X-HTTP-Method: CoR`
 | Get single author | GET | /api/authors/AUTHORID | |
 | Get author books | GET | /api/authors/AUTHORID/books | Plugin builds relations based on models definition |
 | Get book author | GET | /api/books/BOOKID/author | Same in reverse way |
@@ -540,6 +543,86 @@ const fastify = Fastify({
 });
 
 ```
+
+## Create or Update mode (CoU-mode) or Replace mode (CoR-mode)
+
+The "Create or Update" mode, also known as CoU-mode, and the "Create or Replace" mode also known as CoR-mode are convenient features provided by fastify-mongoose-api to simplify client-side logic when you want to either create a new document or update/replace an existing one using a single API endpoint. 
+
+This is especially useful in scenarios where the client may not know if the document already exists, or when you want to minimize the number of API calls and code complexity.
+
+### Why Use CoU/CoR Mode?
+
+- 🧩 **Simplifies client logic:** Instead of checking if a document exists and then deciding whether to send a POST (create) or PUT(replace)/PATCH(update) request, you can always send the same request and let the server handle it.
+- 📉 **Reduces API calls:** You avoid an extra round-trip to check for existence before creating or updating.
+- ⚛️ **Atomic operation:** The server ensures that the operation is performed atomically, reducing the risk of race conditions.
+
+### How It Works the CoU-mode
+
+To use CoU-mode, you send a POST request to the collection endpoint (e.g., `/api/books`) with the data you want to create or update, and include the custom HTTP header `X-HTTP-Method: CoU`. The plugin will check if a document with the provided `_id` exists:
+- If it exists, it updates the document with the provided data.
+- If it does not exist, it creates a new document.
+
+If, in the update, you wish to remove a field, set it to `undefined` or `null`.
+
+This is handled internally by the `apiCoU` method on your model.
+
+The updated or created document will be returned.
+
+#### Example 1 for CoU-mode 
+
+```js
+// Create or update a book
+await axios.post('/api/books', {
+    id: '5d62f39c20672b3cf2822ded', // If this _id exists, it will be updated; otherwise, a new document is created
+    title: 'The best book',
+    isbn: '1482663775',
+    author: '5d62e5e4dab2ce6a1b958461'
+}, {
+    headers: { 'X-HTTP-Method': 'CoU' }
+});
+```
+
+#### Example 2 for CoU-mode 
+
+```js
+// Create or update a book (same _id above so update)
+await axios.post('/api/books', {
+    _id: '5d62f39c20672b3cf2822ded', 
+    title: 'A new title',
+    isbn: null,
+    author: '5d62e5e4dab2ce6a1b958461'
+}, {
+    headers: { 'X-HTTP-Method': 'CoU' }
+});
+```
+In "standard" mode, this call raise a **duplicate key error** because the document _id is the same of example 1. 
+
+In CoU-mode instead the document with this `_id` is changed. Its `title` is updated and `isbn` is removed (unset).
+
+### How It Works the CoR-mode
+
+To use CoR-mode, you send a POST request to the collection endpoint (e.g., `/api/books`) with the data you want to create or replace, and include the custom HTTP header `X-HTTP-Method: CoR`. The plugin will check if a document with the provided `_id` exists:
+- If it exists, it replace the document with the provided data.
+- If it does not exist, it creates a new document.
+
+This is handled internally by the `apiCoR` method on your model.
+
+The replaced or created document will be returned.
+
+#### Example 1 for CoR-mode
+
+```js
+// Create or replace a book (same _id above so replace)
+await axios.post('/api/books', {
+    _id: '5d62f39c20672b3cf2822ded', 
+    title: 'A new title',
+    author: '5d62e5e4dab2ce6a1b958461'
+}, {
+    headers: { 'X-HTTP-Method': 'CoR' }
+});
+```
+
+This has the same result of the example 2 for CoU-mode above but now, formally, the entire document is replaced with the one in data where `title` is different and `isbn` doesn't exist.
 
 ## Populate on POST, PUT and single item GET methods
 
